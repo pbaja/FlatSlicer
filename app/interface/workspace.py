@@ -1,6 +1,9 @@
 import math
 import tkinter as tk
+import numpy as np
+from PIL import Image, ImageTk
 
+from slicer import RasterImage
 from .view import View
 from .style import *
 
@@ -8,76 +11,87 @@ class WorkspaceView(View):
 
     def __init__(self, parent):
         super().__init__(parent)
+        self.canvas:tk.Canvas = None
+        self._scale = 1.0
+        self._img_size = (None, None)
+        self._img_scaled = None
+        self._img_id = None
+        self._img = None
+        self._tkimg = None
+        self._line_ids = []
 
     def init(self):
+        '''
+        Create canvas
+        '''
         self.canvas = tk.Canvas(self.frame, bg=CANVAS_BG)
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.bind('<MouseWheel>', self._wheel)  # with Windows and MacOS, but not Linux
+        self.canvas.bind('<Button-5>',   self._wheel)  # only with Linux, wheel scroll down
+        self.canvas.bind('<Button-4>',   self._wheel)
+        self.canvas.bind('<ButtonPress-1>', lambda event: self.canvas.scan_mark(event.x, event.y))
+        self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
 
-    def clear(self):
-        self.canvas.delete('all')
+        self.text = self.canvas.create_text(0, 0, anchor='nw', text='Scroll to zoom')
 
-    def display_lines(self, drawing, scale):
-        # Help method for drawing points
-        def draw(points, filled):
+    def _wheel(self, event):
+        '''
+        Zoom with mouse wheel
+        '''
+        # Respond to Linux (event.num) or Windows (event.delta) wheel event
+        scale = 1.0
+        if event.num == 5 or event.delta == -120: scale = 0.5
+        if event.num == 4 or event.delta == 120: scale = 2.0
+        # Clamp scale
+        if self._scale * scale > 10.0: return None
+        if self._scale * scale < 0.1: return None
+        self._scale *= scale
+        # Rescale all canvas objects
+        mouse_x, mouse_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
+        self.canvas.scale('all', mouse_x, mouse_y, scale, scale)
+        # Scale image
+        if self._tkimg is not None: self._update_image()
+        # Constrain view box
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+
+    def _update_image(self):
+        # Calculate new size
+        size = int(self._scale * self._img_size[0]), int(self._scale * self._img_size[1])
+        # Remove previous
+        if self._img_id:
+            self.canvas.delete(self._img_id)
+            self._tkimg = None
+        # Create scaled image
+        self._img_scaled = self._img.resize(size, Image.NEAREST)
+        self._tkimg = ImageTk.PhotoImage(image=self._img_scaled)
+        # Add to canvas
+        self.canvas.delete('img')
+        self._img_id = self.canvas.create_image(self.canvas.coords(self.text), anchor='nw', image=self._tkimg, tag='img')
+        self.canvas.lower(self._img_id)
+
+    def show(self, image:RasterImage):
+        '''
+        Display image on canvas
+        '''
+
+        # Remove previous lines
+        for line_id in self._line_ids:
+            self.canvas.delete(line_id)
+        self._line_ids.clear()
+
+        # Display raster image
+        self._img = image.image
+        self._img_size = self._img.size
+        self._update_image()
+
+        # Display polygons
+        offset = self.canvas.coords(self.text)
+        for polygon in image.polygons:
+            # Flatten array of points
             flat_points = []
-            for point in points:
-                point *= scale
-                flat_points.append(point.x)
-                flat_points.append(point.y)
-            if filled:
-                self.canvas.create_polygon(*flat_points, fill=CANVAS_FILL, outline=CANVAS_LINE)
-            else:
-                self.canvas.create_line(*flat_points, fill=CANVAS_LINE)
-
-        # Iterate over all polygons
-        for polygon in drawing.polygons:
-
-            # Convert lines to points
-            first = polygon.lines[0]
-            points = [first.start]
-            for idx, line in enumerate(polygon.lines):
-                prev = points[-1]
-                dist = (prev - line.start).len() #  math.sqrt(pow(prev.x-line.start.x, 2) + pow(prev.y-line.start.y, 2))
-                if dist > 0.01 and len(points) > 2: 
-                    draw(points, polygon.filled)
-                    points.clear()
-                    points.append(line.start)
-                    points.append(line.end)
-                    points.append(polygon.lines[idx+1].start)
-                else:
-                    points.append(line.end)
-            if len(points) > 2: 
-                draw(points, polygon.filled)
-
-    def display_gcode(self, drawing, scale):
-        self.draw_gcode(drawing.job.cmd_outline, scale, CANVAS_LINE_OUTLINE)
-        self.draw_gcode(drawing.job.cmd_infill, scale, CANVAS_LINE_INFILL)
-
-    def draw_gcode(self, commands, scale, color):
-        # Previous x, y
-        px, py = 0, 0
-        for line in commands:
-            params = line.split()
-            if len(params) > 0:
-                cmd = params[0]
-                # Move command
-                if cmd == 'G0' or cmd == 'G1':
-                    # Target x, y
-                    tx, ty = px, py
-                    for param in params[1:]:
-                        if param[0] == 'X': tx = float(param[1:])
-                        elif param[0] == 'Y': ty = float(param[1:])
-                    # Draw line
-                    fill = color if cmd == 'G1' else CANVAS_LINE_TRAVEL
-                    points = [px, py, tx, ty]
-                    points = [p*scale for p in points]
-                    self.canvas.create_line(*points, fill=fill)
-                    px = tx
-                    py = ty
-
-    def display(self, drawing):
-        if drawing.job is None:
-            self.display_lines(drawing, 10)
-        else:
-            self.display_gcode(drawing, 10)
-            print('drawing has gcode')
+            for x, y in polygon:
+                flat_points.append(x*self._scale + offset[0])
+                flat_points.append(y*self._scale + offset[1])
+            # Add line
+            line_id = self.canvas.create_line(*flat_points, fill='red', width=int(self._scale))
+            self._line_ids.append(line_id)

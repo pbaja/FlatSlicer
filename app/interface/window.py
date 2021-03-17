@@ -6,6 +6,7 @@ from ctypes import windll, create_string_buffer, byref
 from pathlib import Path
 
 from utils import Event
+from slicer import RasterImage
 from .style import *
 from .sidebar import SidebarView
 from .workspace import WorkspaceView
@@ -48,8 +49,8 @@ class Window:
         # Private
         self._root:tk.Tk = None
         # Public
-        self.sidebar:SidebarView = None
-        self.workspace:WorkspaceView = None
+        self._sidebar:SidebarView = None
+        self._workspace:WorkspaceView = None
         # Events
         self.close_pressed = Event()
         self.trace_file = Event()
@@ -76,19 +77,19 @@ class Window:
         window.pack(fill=tk.BOTH, expand=1)
 
         # Sidebar
-        self.sidebar = SidebarView(window)
-        self.sidebar.addfile_pressed += self._addfile_pressed
-        self.sidebar.delfile_pressed += self._delfile_pressed
-        self.sidebar.trace_pressed += self._trace_pressed
-        self.sidebar.generate_pressed += self._generate_pressed
-        self.sidebar.export_pressed += self._export_pressed
-        self.sidebar.init()
-        window.add(self.sidebar.frame)
+        self._sidebar = SidebarView(window)
+        self._sidebar.addfile_pressed += self._addfile_pressed
+        self._sidebar.delfile_pressed += self._delfile_pressed
+        self._sidebar.trace_pressed += self._trace_pressed
+        self._sidebar.generate_pressed += self._generate_pressed
+        self._sidebar.export_pressed += self._export_pressed
+        self._sidebar.init()
+        window.add(self._sidebar.frame)
 
         # Workspace
-        self.workspace = WorkspaceView(window)
-        self.workspace.init()
-        window.add(self.workspace.frame)
+        self._workspace = WorkspaceView(window)
+        self._workspace.init()
+        window.add(self._workspace.frame)
 
         log.info('Window spawned')
 
@@ -96,17 +97,17 @@ class Window:
         filetypes = [('Image files', ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp'))]
         filepath = filedialog.askopenfilename(parent=self._root, title='Select file to add', filetypes=filetypes)
         if len(filepath) != 0: 
-            listbox = self.sidebar.items['files']
+            listbox = self._sidebar.items['files']
             listbox.insert(tk.END, filepath)
 
     def _delfile_pressed(self) -> None:
-        listbox = self.sidebar.items['files']
+        listbox = self._sidebar.items['files']
         selection = listbox.curselection()
         for x in reversed(selection):
             listbox.delete(x)
 
     def _get_selected_path(self) -> Path:
-        listbox = self.sidebar.items['files']
+        listbox = self._sidebar.items['files']
         selection = listbox.curselection()
         selection = selection[0] if len(selection) > 0 else 0
         path_str = listbox.get(selection)
@@ -127,11 +128,17 @@ class Window:
         gcode_path = filedialog.asksaveasfilename(parent=self._root, title='Select filename', initialfile=filename, filetypes=filetypes)
         self.export_file(path, gcode_path)
 
+    def show_image(self, image:RasterImage):
+        '''
+        Changes or refreshes currently displayed image
+        '''
+        self._workspace.show(image)
+
     def load_config(self, cfg):
         '''
         Loads config values to sidebar
         '''
-        for path, item in self.sidebar.items.items():
+        for path, item in self._sidebar.items.items():
             value = cfg.get_value(path)
             # Fill items
             if isinstance(item, tk.Entry):
@@ -145,7 +152,7 @@ class Window:
         '''
         Dumps values from sidebar items to config
         '''
-        for path, item in self.sidebar.items.items():
+        for path, item in self._sidebar.items.items():
             if isinstance(item, tk.Entry):
                 cfg.set_value(path, item.get())
             elif isinstance(item, tk.Listbox):
