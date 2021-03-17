@@ -3,6 +3,7 @@
 
 # Excluding
 !/app/
+!/fonts/
 !/README.md
 !/.gitignore
 !/run.*
