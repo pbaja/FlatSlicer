@@ -1,0 +1,11 @@
+# Ignore all top level stuff by default
+/*
+
+# Excluding
+!/app/
+!/README.md
+!/.gitignore
+!/run.*
+
+# Python stuff
+__pycache__/
