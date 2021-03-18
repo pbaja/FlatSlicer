@@ -48,8 +48,8 @@ def _extract_outline(pixels) -> np.ndarray:
 def _travel(pixels, x, y) -> List:
     points = [(x, y)]
     point_num = 0
-    point_dir = (0,0)
-    last_dir = (0, 0)
+    point_dir = 0
+    last_dir = 0
     prev_point = points[0]
     while True:
         # Mark current
@@ -66,27 +66,45 @@ def _travel(pixels, x, y) -> List:
         # Move left
         if pixels[y, x-1] == Pixel.Outline:
             x -= 1
-            last_dir = (0, -1)
-            continue
+            last_dir = 0
         # Move right
-        if pixels[y, x+1] == Pixel.Outline:
+        elif pixels[y, x+1] == Pixel.Outline:
             x += 1
-            last_dir = (0, 1)
-            continue
+            last_dir = 1
         # Move up
-        if pixels[y-1, x] == Pixel.Outline:
+        elif pixels[y-1, x] == Pixel.Outline:
             y -= 1
-            last_dir = (-1, 0)
-            continue
+            last_dir = 2
         # Move down
-        if pixels[y+1, x] == Pixel.Outline:
+        elif pixels[y+1, x] == Pixel.Outline:
             y += 1
-            last_dir = (1, 0)
-            continue
-        
+            last_dir = 3
+
+        # Move left-up
+        elif pixels[y-1, x-1] == Pixel.Outline:
+            x -= 1
+            y -= 1
+            last_dir = 4
+        # Move right-up
+        elif pixels[y-1, x+1] == Pixel.Outline:
+            x += 1
+            y -= 1
+            last_dir = 5
+        # Move left-down
+        elif pixels[y+1, x-1] == Pixel.Outline:
+            x -= 1
+            y += 1
+            last_dir = 6
+        # Move right-down
+        elif pixels[y+1, x+1] == Pixel.Outline:
+            x += 1
+            y += 1
+            last_dir = 7
+
         # No outline in any direction
-        points.append(prev_point)
-        return points
+        else:
+            points.append(prev_point)
+            return points
 
 @nb.njit(_tuple64_array2(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
@@ -98,7 +116,7 @@ def _trace_outline(pixels) -> List:
             p = pixels[y, x]
             if p == Pixel.Outline:
                 points = _travel(pixels, x, y)
-                if len(points) > 2:
+                if len(points) > 2: # At least 3 vertices make polygons
                     polygons.append(points)
     return polygons
 
@@ -156,7 +174,7 @@ class RasterImage:
 
         # Simplify
         total_lines_before = sum([len(p) for p in self.polygons])
-        self.polygons = [rdp_simplify(p) for p in self.polygons]
+        self.polygons = [rdp_simplify(p, epsilon=0.5) for p in self.polygons]
         perf.tick()
 
         # Print stats

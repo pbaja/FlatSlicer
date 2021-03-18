@@ -59,11 +59,11 @@ def _rdp(points, start_index, last_index, epsilon):
     return indices
 
 
-def rdp_simplify(points):
+def rdp_simplify(points, epsilon=0.5):
     # Convert list of tuples to numpy array
     array = np.array(points, dtype=np.float32)
     # Create mask with rdp algorithm
-    mask = _rdp(array, 0, len(array)-1, 0.8)
+    mask = _rdp(array, 0, len(array)-1, epsilon)
     # Apply mask
     result = list([point for point, b in zip(array, mask) if b])
     return result
