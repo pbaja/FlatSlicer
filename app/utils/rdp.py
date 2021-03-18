@@ -30,40 +30,66 @@ def _pldist(point:np.ndarray, start:np.ndarray, end:np.ndarray):
     line_dist = _len(end - start)
     return np.divide(cross_dist, line_dist)
 
-def _rdp(points, start_index, last_index, epsilon):
-    stk = []
-    stk.append([start_index, last_index])
-    global_start_index = start_index
-    indices = np.ones(last_index - start_index + 1, dtype=bool)
 
-    while stk:
-        start_index, last_index = stk.pop()
+_array2_float32 = nb.types.Array(nb.float32, 2, 'C')
+_array1_bool = nb.types.Array(nb.boolean, 1, 'C')
+_list_array1_float32 = nb.types.List(_array1_float32)
 
-        dmax = 0.0
-        index = start_index
+@nb.njit(_list_array1_float32(_array2_float32, nb.float64))
+def _rdp(points, epsilon):
+    start = 0
+    end = len(points)-1
+    stack = [[start, end]]
+    mask = np.ones(end - start + 1, dtype=np.bool8)
 
-        for i in range(index + 1, last_index):
-            if indices[i - global_start_index]:
-                d = _pldist(points[i], points[start_index], points[last_index])
-                if d > dmax:
-                    index = i
-                    dmax = d
+    while stack:
+        # Next in stack
+        start, end = stack.pop()
 
-        if dmax > epsilon:
-            stk.append([start_index, index])
-            stk.append([index, last_index])
+        # Find max distance
+        dist_max = 0.0
+        dist_idx = start
+        for idx in range(dist_idx + 1, end):
+            if mask[idx]:
+                dist = _pldist(points[idx], points[start], points[end])
+                if dist > dist_max:
+                    dist_idx = idx
+                    dist_max = dist
+
+        # Check if distance is greater than epsilon
+        if dist_max > epsilon:
+            stack.append([start, dist_idx])
+            stack.append([dist_idx, end])
         else:
-            for i in range(start_index + 1, last_index):
-                indices[i - global_start_index] = False
+            for idx in range(start + 1, end):
+                mask[idx] = False
 
-    return indices
+    # Apply mask
+    result = []
+    for idx in range(len(points)):
+        if mask[idx]:
+            result.append(points[idx])
+    return result
+
+def _rdp_all(arrays, epsilon):
+    result = []
+    for idx in nb.prange(len(arrays)):
+        result.append(_rdp(arrays[idx], epsilon))
+    return result
 
 
-def rdp_simplify(points, epsilon=0.5):
+def rdp_simplify(points, epsilon):
     # Convert list of tuples to numpy array
     array = np.array(points, dtype=np.float32)
-    # Create mask with rdp algorithm
-    mask = _rdp(array, 0, len(array)-1, epsilon)
-    # Apply mask
-    result = list([point for point, b in zip(array, mask) if b])
-    return result
+    # Create result with rdp algorithm
+    return _rdp(array, epsilon)
+
+def rdp_simplify_all(polygons, epsilon):
+    # Convert lists to arrays
+    arrays = []
+    for polygon in polygons:
+        array = np.array(polygon, dtype=np.float32)
+        arrays.append(array)
+    # Simplify all
+    print(nb.typeof(arrays))
+    return _rdp_all(arrays, epsilon)

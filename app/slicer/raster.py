@@ -7,7 +7,7 @@ from pathlib import Path
 from enum import IntEnum
 from PIL import Image
 
-from utils import PerfTool, rdp_simplify
+from utils import PerfTool, rdp_simplify_all
 
 class Pixel(IntEnum):
     Black = 0
@@ -174,7 +174,8 @@ class RasterImage:
 
         # Simplify
         total_lines_before = sum([len(p) for p in self.polygons])
-        self.polygons = [rdp_simplify(p, epsilon=0.5) for p in self.polygons]
+        #self.polygons = [rdp_simplify(p, 0.5) for p in self.polygons]
+        self.polygons = rdp_simplify_all(self.polygons, 0.5)
         perf.tick()
 
         # Print stats

@@ -43,8 +43,8 @@ class WorkspaceView(View):
         '''
         # Respond to Linux (event.num) or Windows (event.delta) wheel event
         scale = 1.0
-        if event.num == 5 or event.delta == -120: scale = 0.5
-        if event.num == 4 or event.delta == 120: scale = 2.0
+        if event.num == 5 or event.delta == -120: scale = 0.75
+        if event.num == 4 or event.delta == 120: scale = 1.333
         # Clamp scale
         prev_scale = self._scale
         self._scale *= scale
