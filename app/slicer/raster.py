@@ -7,7 +7,7 @@ from pathlib import Path
 from enum import IntEnum
 from PIL import Image
 
-from utils import PerfTool
+from utils import PerfTool, rdp_simplify
 
 class Pixel(IntEnum):
     Black = 0
@@ -88,7 +88,7 @@ def _travel(pixels, x, y) -> List:
         points.append(prev_point)
         return points
 
-@nb.njit(_tuple64_array2(_pixels_array))
+@nb.njit(_tuple64_array2(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -143,18 +143,31 @@ class RasterImage:
         '''
         Tries to convert binary array with image data to polygons
         '''
+        perf = PerfTool()
+
         # Extract outline pixels
-        PerfTool.tick()
+        perf.tick()
         self.pixels = _extract_outline(self.pixels)
-        PerfTool.tick()
+        perf.tick()
 
         # Trace outline
         self.polygons = _trace_outline(self.pixels)
-        PerfTool.tick()
+        perf.tick()
+
+        # Simplify
+        total_lines_before = sum([len(p) for p in self.polygons])
+        self.polygons = [rdp_simplify(p) for p in self.polygons]
+        perf.tick()
 
         # Print stats
         total_lines = sum([len(p) for p in self.polygons])
-        log.info(f'Image {self.image_path.name}, convert: {PerfTool.history(-2)} ms, trace: {PerfTool.history(-1)} ms, {len(self.polygons)} polygons, {total_lines} lines')
+        log.info(\
+            f'Image {self.image_path.name},'\
+            f' convert: {perf.history(-3)} ms,'\
+            f' trace: {perf.history(-2)} ms,'\
+            f' simplify: {perf.history(-1)} ms,'\
+            f' {len(self.polygons)} polygons,'\
+            f' {total_lines} (+{total_lines_before-total_lines}) lines')
 
     def render(self) -> None:
         '''
