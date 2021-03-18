@@ -17,8 +17,8 @@ class Pixel(IntEnum):
 
 
 _pixels_array = nb.types.Array(nb.uint8, 2, 'C')
-_tuple_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
-_tuple_array2 = nb.types.List(_tuple_array)
+_tuple64_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
+_tuple64_array2 = nb.types.List(_tuple64_array)
 
 @nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
 def _neighbours_sum(a, x, y) -> int:
@@ -44,7 +44,7 @@ def _extract_outline(pixels) -> np.ndarray:
                 pixels[x, y] = Pixel.Outline
     return pixels
 
-@nb.njit(_tuple_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
+@nb.njit(_tuple64_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
     points = [(x, y)]
     point_num = 0
@@ -83,11 +83,12 @@ def _travel(pixels, x, y) -> List:
             y += 1
             last_dir = (1, 0)
             continue
+        
         # No outline in any direction
         points.append(prev_point)
         return points
 
-@nb.njit(_tuple_array2(_pixels_array), parallel=True)
+@nb.njit(_tuple64_array2(_pixels_array))
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -153,7 +154,7 @@ class RasterImage:
 
         # Print stats
         total_lines = sum([len(p) for p in self.polygons])
-        log.info(f'Image {self.image_path.name}, convert: {PerfTool.history(-1)} ms, trace: {PerfTool.history(-2)} ms, {len(self.polygons)} polygons, {total_lines} lines')
+        log.info(f'Image {self.image_path.name}, convert: {PerfTool.history(-2)} ms, trace: {PerfTool.history(-1)} ms, {len(self.polygons)} polygons, {total_lines} lines')
 
     def render(self) -> None:
         '''

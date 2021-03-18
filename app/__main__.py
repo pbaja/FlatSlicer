@@ -16,7 +16,12 @@ if __name__ == '__main__':
             sys.exit(1)
 
     # Configure logging module
-    log.basicConfig(level=log.INFO, format='[%(levelname)s] %(message)s')
+    log.getLogger('numba.core.ssa').setLevel(log.WARN)
+    log.getLogger('numba.core.interpreter').setLevel(log.WARN)
+    log.getLogger('numba.core.byteflow').setLevel(log.WARN)
+    log.getLogger('numba.core.typeinfer').setLevel(log.WARN)
+    log.getLogger('PIL.PngImagePlugin').setLevel(log.WARN)
+    log.basicConfig(level=log.DEBUG, format='[%(levelname)s] %(message)s')
     log.info(f'Starting')
 
     # Load configuration
