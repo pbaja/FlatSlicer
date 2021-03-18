@@ -7,7 +7,7 @@ from pathlib import Path
 from enum import IntEnum
 from PIL import Image
 
-
+from utils import PerfTool
 
 class Pixel(IntEnum):
     Black = 0
@@ -17,6 +17,8 @@ class Pixel(IntEnum):
 
 
 _pixels_array = nb.types.Array(nb.uint8, 2, 'C')
+_tuple_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
+_tuple_array2 = nb.types.List(_tuple_array)
 
 @nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
 def _neighbours_sum(a, x, y) -> int:
@@ -42,6 +44,7 @@ def _extract_outline(pixels) -> np.ndarray:
                 pixels[x, y] = Pixel.Outline
     return pixels
 
+@nb.njit(_tuple_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
     points = [(x, y)]
     point_num = 0
@@ -51,7 +54,6 @@ def _travel(pixels, x, y) -> List:
     while True:
         # Mark current
         pixels[y, x] = Pixel.Visited
-        
 
         # Append point if direction changed
         point_num += 1
@@ -85,7 +87,7 @@ def _travel(pixels, x, y) -> List:
         points.append(prev_point)
         return points
 
-
+@nb.njit(_tuple_array2(_pixels_array), parallel=True)
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -95,11 +97,8 @@ def _trace_outline(pixels) -> List:
             p = pixels[y, x]
             if p == Pixel.Outline:
                 points = _travel(pixels, x, y)
-                polygons.append(points)
-                # DEBUG
-                print(f'Points: {len(points)}')
-                #return polygons
-                # DEBUG_END
+                if len(points) > 2:
+                    polygons.append(points)
     return polygons
 
 class RasterImage:
@@ -144,16 +143,17 @@ class RasterImage:
         Tries to convert binary array with image data to polygons
         '''
         # Extract outline pixels
-        start_time = time.time()
+        PerfTool.tick()
         self.pixels = _extract_outline(self.pixels)
-        elapsed = time.time()-start_time
-        log.info(f'Image {self.image_path.name} converted in {round(elapsed*1000,2)} ms')
+        PerfTool.tick()
 
         # Trace outline
-        start_time = time.time()
         self.polygons = _trace_outline(self.pixels)
-        elapsed = time.time()-start_time
-        log.info(f'Image {self.image_path.name} traced in {round(elapsed*1000,2)} ms')
+        PerfTool.tick()
+
+        # Print stats
+        total_lines = sum([len(p) for p in self.polygons])
+        log.info(f'Image {self.image_path.name}, convert: {PerfTool.history(-1)} ms, trace: {PerfTool.history(-2)} ms, {len(self.polygons)} polygons, {total_lines} lines')
 
     def render(self) -> None:
         '''

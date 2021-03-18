@@ -90,8 +90,8 @@ class WorkspaceView(View):
             # Flatten array of points
             flat_points = []
             for x, y in polygon:
-                flat_points.append(x*self._scale + offset[0])
-                flat_points.append(y*self._scale + offset[1])
+                flat_points.append((x + 0.5)*self._scale + offset[0])
+                flat_points.append((y + 0.5)*self._scale + offset[1])
             # Add line
             line_id = self.canvas.create_line(*flat_points, fill='red', width=int(self._scale))
             self._line_ids.append(line_id)
