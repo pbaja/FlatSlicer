@@ -24,6 +24,11 @@ class SidebarView(View):
         box.add_button('Remove', callback=self.delfile_pressed)
         self.items.update(box.items)
 
+        widget = SidebarWidget(self.frame, 'Import')
+        widget.add_entry('Image DPI', 'import.dpi:float')
+        widget.add_entry('Epsilon [mm]', 'import.epsilon:float')
+        self.items.update(widget.items)
+
         widget = SidebarWidget(self.frame, 'Global')
         widget.add_entry('Laser ON', 'global.laser_on')
         widget.add_entry('Laser OFF', 'global.laser_off')

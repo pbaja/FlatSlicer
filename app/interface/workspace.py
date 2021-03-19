@@ -14,7 +14,7 @@ class WorkspaceView(View):
         super().__init__(parent)
         self.canvas:tk.Canvas = None
         self._scale = 1.0
-        self._text_id = None
+        self._anchor_id = None
         self._img = None # Original image
         self._img_scaled = None # Scaled image
         self._img_cropped = None # Cropped image
@@ -36,7 +36,22 @@ class WorkspaceView(View):
         self.canvas.bind('<ButtonRelease-1>', self._motion_end)
         self.canvas.bind("<B1-Motion>", self._motion)
 
-        self._text_id = self.canvas.create_text(0, 0, anchor='nw', text='Scroll to zoom')
+        self._anchor_id = self.canvas.create_text(0, 0, anchor='nw', text='', fill='gray', font=FONT_CANVAS)
+
+        _ = (0,0,0,0)
+        self._scale_ids = [
+            self.canvas.create_line(_, width=1, fill='white'),
+            self.canvas.create_line(_, width=2, fill='white', dash=(1,1))
+        ]
+        self._update_scale()
+
+    def _update_scale(self):
+        h = self.canvas.winfo_height()
+        x, y = self.canvas.canvasx(10), self.canvas.canvasy(h-10)
+        for elem in self._scale_ids:
+            width = 100
+            self.canvas.coords(elem, x, y, x+width, y)
+            self.canvas.lift(elem)
 
     def _wheel(self, event):
         '''
@@ -55,20 +70,21 @@ class WorkspaceView(View):
         mouse_x, mouse_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         self.canvas.scale('all', mouse_x, mouse_y, scale, scale)
         for line_id in self._line_ids:
-            self.canvas.itemconfig(line_id, width=int(self._scale))
+            self.canvas.itemconfig(line_id, width=math.ceil(self._scale))
         # Scale image
         if self._tkimg is not None:
             self._scale_image()
             self._crop_image()
             self._update_image()
-        # Constrain view box
-       # self.canvas.configure(scrollregion=self.canvas.bbox('all'))
-        self.canvas.itemconfig(self._text_id, text=f'x{round(self._scale,1)}')
+        # Update text
+        self.canvas.itemconfig(self._anchor_id, text=f'x{round(self._scale,1)}')
+        self._update_scale()
 
     def _motion(self, event):
         # Drag canvas
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-        # Update image every few pixels
+        self._update_scale()
+        # Update image every 50 pixels
         pos = (event.x, event.y)
         if self._motion_pos is None: self._motion_pos = pos
         dist = abs(pos[0] - self._motion_pos[0])**2 + abs(pos[1] - self._motion_pos[1])**2
@@ -90,7 +106,7 @@ class WorkspaceView(View):
 
     def _crop_image(self):
         # View box in canvas space
-        pos = self.canvas.coords(self._text_id)
+        pos = self.canvas.coords(self._anchor_id)
         pos = [int(pos[0]), int(pos[1])]
         view_box = (
             self.canvas.canvasx(0) - pos[0],
@@ -147,7 +163,7 @@ class WorkspaceView(View):
 
         # Display polygons
         colors = ["#%06x"%random.randint(0,16777215) for _ in range(10)]
-        offset = self.canvas.coords(self._text_id)
+        offset = self.canvas.coords(self._anchor_id)
         for polygon in image.polygons:
             # Flatten array of points
             flat_points = []

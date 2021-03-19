@@ -7,7 +7,7 @@ from pathlib import Path
 from enum import IntEnum
 from PIL import Image
 
-from utils import PerfTool, rdp_simplify_all
+from utils import Config, PerfTool, rdp_simplify_all
 
 class Pixel(IntEnum):
     Black = 0
@@ -46,6 +46,7 @@ def _extract_outline(pixels) -> np.ndarray:
 
 @nb.njit(_tuple64_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
+    reverse = False
     points = [(x, y)]
     point_num = 0
     point_dir = 0
@@ -58,7 +59,10 @@ def _travel(pixels, x, y) -> List:
         # Append point if direction changed
         point_num += 1
         if point_dir != last_dir:
-            points.append(prev_point)
+            if reverse:
+                points.insert(0, prev_point)
+            else:
+                points.append(prev_point)
             point_dir = last_dir
             point_num = 0
         prev_point = (x, y)
@@ -101,10 +105,17 @@ def _travel(pixels, x, y) -> List:
             y += 1
             last_dir = 7
 
-        # No outline in any direction
+        # Revisit first pixel
+        elif not reverse:
+            points.append(prev_point) # Add final point
+            reverse = True
+            prev_point = points[0]
+            last_dir = point_dir
+            x = points[0][0]
+            y = points[0][1]
+
+        # Finished
         else:
-            #TODO: Try going to first point, maybe in the other direction
-            points.append(prev_point)
             return points
 
 @nb.njit(_tuple64_array2(_pixels_array)) # parallel=True causes artifacts
@@ -158,7 +169,7 @@ class RasterImage:
             print(e)
             return False
 
-    def trace(self) -> None:
+    def trace(self, config:Config) -> None:
         '''
         Tries to convert binary array with image data to polygons
         '''
@@ -175,8 +186,9 @@ class RasterImage:
 
         # Simplify
         total_lines_before = sum([len(p) for p in self.polygons])
-        #self.polygons = [rdp_simplify(p, 0.5) for p in self.polygons]
-        self.polygons = rdp_simplify_all(self.polygons, 0.5)
+        epsilon = config.get_value('import.epsilon')
+        if epsilon > 0:
+            self.polygons = rdp_simplify_all(self.polygons, epsilon)
         perf.tick()
 
         # Print stats

@@ -52,7 +52,8 @@ class Interface:
         img = self.slicer.get_image(file_path=path)
         if img is None: img = self.slicer.load_image(file_path=path)
 
-        img.trace()
+        self.window.dump_config(self.config)
+        img.trace(self.config)
         img.render()
         
         self.window.show_image(img)

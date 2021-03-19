@@ -48,6 +48,7 @@ class Window:
     def __init__(self) -> None:
         # Private
         self._root:tk.Tk = None
+        self._last_selection = 0
         # Public
         self._sidebar:SidebarView = None
         self._workspace:WorkspaceView = None
@@ -109,7 +110,8 @@ class Window:
     def _get_selected_path(self) -> Path:
         listbox = self._sidebar.items['files']
         selection = listbox.curselection()
-        selection = selection[0] if len(selection) > 0 else 0
+        selection = selection[0] if len(selection) > 0 else self._last_selection
+        self._last_selection = selection
         path_str = listbox.get(selection)
         return Path(path_str)
 

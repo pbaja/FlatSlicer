@@ -8,6 +8,10 @@ class Config:
         'files': [
             # No files loaded by default
         ],
+        'import': {
+            'dpi': 508,
+            'epsilon': 0.5
+        },
         'global': {
             'laser_on': 'M106 P1 S{power}',
             'laser_off': 'M107 P1',
@@ -34,20 +38,36 @@ class Config:
         self.path = Path(sys.path[0]).parent / filepath
         self.data = {}
 
-    def get_value(self, path:str):
+    def get_value(self, path:str, source=None):
         keys = path.split('.')
-        item = self.data
-        for key in keys[:-1]:
-            if key in item: item = item[key]
-            else: return None
-        key_name = keys[-1].rsplit(':', 1)[0]
-        return item[key_name]
+        item = self.data if source is None else source
+        for i, key in enumerate(keys):
+            # Is this last key
+            last = i == len(keys)-1
+            # Get item
+            if last: key = keys[-1].rsplit(':', 1)[0]
+            if key in item:
+                item = item[key]
+                if last: return item
+            else: 
+                # Item not found, try searching in default data
+                if source is None:
+                    log.warn(f'Entry "{path}" not found in config, searching in default data')
+                    default = self.get_value(path, Config.default_data)
+                    if default is not None:
+                        self.set_value(path, default)
+                        return default
+                # Not found in default data either
+                return None
+        return None
 
     def set_value(self, path:str, value):
         # Find dictionary at path
         keys = path.split('.')
         item = self.data
         for key in keys[:-1]:
+            if not key in item:
+                item[key] = {}
             item = item[key]
 
         # Set value with parsing
