@@ -162,14 +162,16 @@ class WorkspaceView(View):
         self._update_image()
 
         # Display polygons
-        colors = ["#%06x"%random.randint(0,16777215) for _ in range(10)]
+        colors = ['#EE4D4D', '#FF884D', '#FFC44D', '#8BC94D', '#4DDBC4', '#4DC4FF', '#5E94FF', '#A071FF', '#FF4DA5']
+        #colors = ['#4DA326', '#E84133', '#CF901F', '#2FA49C', '#782EA0']
+        #colors = ["#%06x"%random.randint(0,16777215) for _ in range(10)]
         offset = self.canvas.coords(self._anchor_id)
-        for polygon in image.polygons:
+        for i, polygon in enumerate(image.polygons):
             # Flatten array of points
             flat_points = []
             for x, y in polygon:
                 flat_points.append((x + 0.5)*self._scale + offset[0])
                 flat_points.append((y + 0.5)*self._scale + offset[1])
             # Add line
-            line_id = self.canvas.create_line(*flat_points, fill=random.choice(colors), width=int(self._scale))
+            line_id = self.canvas.create_line(*flat_points, fill=colors[i%len(colors)], width=int(self._scale))
             self._line_ids.append(line_id)
