@@ -15,7 +15,6 @@ class Pixel(IntEnum):
     Outline = 2
     Visited = 3
 
-
 _pixels_array = nb.types.Array(nb.uint8, 2, 'C')
 _tuple64_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
 _tuple64_array2 = nb.types.List(_tuple64_array)
@@ -44,79 +43,73 @@ def _extract_outline(pixels) -> np.ndarray:
                 pixels[x, y] = Pixel.Outline
     return pixels
 
+@nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
+def _direction(pixels, x, y):
+    if pixels[y, x-1] == Pixel.Outline: return 1
+    elif pixels[y, x+1] == Pixel.Outline: return 2
+    elif pixels[y-1, x] == Pixel.Outline: return 3
+    elif pixels[y+1, x] == Pixel.Outline: return 4
+    elif pixels[y-1, x-1] == Pixel.Outline: return 5
+    elif pixels[y-1, x+1] == Pixel.Outline: return 6
+    elif pixels[y+1, x-1] == Pixel.Outline: return 7
+    elif pixels[y+1, x+1] == Pixel.Outline: return 8
+    return 0
+
 @nb.njit(_tuple64_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
+    pixels[y, x] = Pixel.Visited
+    result = []
     reverse = False
-    points = [(x, y)]
-    point_num = 0
-    point_dir = 0
-    last_dir = 0
-    prev_point = points[0]
+    curr_dir = 0
+    prev_dir = 0
+    prev2_dir = 0
+
+    deltas = [
+        (99, 99), # INVALID
+        (-1,  0), # Left
+        ( 1,  0), # Right
+        ( 0, -1), # Up
+        ( 0,  1), # Down
+        (-1, -1), # Left-Up
+        ( 1, -1), # Right-Up
+        (-1,  1), # Left-Down
+        ( 1,  1), # Right-Down
+    ]
+
     while True:
-        # Mark current
-        pixels[y, x] = Pixel.Visited
-
-        # Append point if direction changed
-        point_num += 1
-        if point_dir != last_dir:
+        # Get next pixel direction
+        curr_dir = _direction(pixels, x, y)
+        delta = deltas[curr_dir]
+        if curr_dir == 0:
+            # No more pixels to travel
             if reverse:
-                points.insert(0, prev_point)
+                return result
+            # Get back to starting point and check if the line goes to the other direction
             else:
-                points.append(prev_point)
-            point_dir = last_dir
-            point_num = 0
-        prev_point = (x, y)
+                result.append((x, y)) # Add final point
+                reverse = True
+                x = result[0][0]
+                y = result[0][1]
+                prev_dir = curr_dir
+                continue
 
-        # Move left
-        if pixels[y, x-1] == Pixel.Outline:
-            x -= 1
-            last_dir = 0
-        # Move right
-        elif pixels[y, x+1] == Pixel.Outline:
-            x += 1
-            last_dir = 1
-        # Move up
-        elif pixels[y-1, x] == Pixel.Outline:
-            y -= 1
-            last_dir = 2
-        # Move down
-        elif pixels[y+1, x] == Pixel.Outline:
-            y += 1
-            last_dir = 3
+        # Append point if direction is going to change
+        if curr_dir != prev_dir:
+            # Continue only if we are not going to change back at next OR we are coming from straight line
+            # This makes diagonal pixels one line instead of hundreds two pixel ones (e.g. typical pcb image went from 49k lines to 6.4k)
+            next_dir = _direction(pixels, x+delta[0], y+delta[1])
+            if next_dir != prev_dir or prev2_dir == prev_dir:
+                if reverse: result.insert(0, (x, y))
+                else: result.append((x, y))
+        prev2_dir = prev_dir
+        prev_dir = curr_dir
 
-        # Move left-up
-        elif pixels[y-1, x-1] == Pixel.Outline:
-            x -= 1
-            y -= 1
-            last_dir = 4
-        # Move right-up
-        elif pixels[y-1, x+1] == Pixel.Outline:
-            x += 1
-            y -= 1
-            last_dir = 5
-        # Move left-down
-        elif pixels[y+1, x-1] == Pixel.Outline:
-            x -= 1
-            y += 1
-            last_dir = 6
-        # Move right-down
-        elif pixels[y+1, x+1] == Pixel.Outline:
-            x += 1
-            y += 1
-            last_dir = 7
+        # Move to next pixel
+        x += delta[0]
+        y += delta[1]
 
-        # Revisit first pixel
-        elif not reverse:
-            points.append(prev_point) # Add final point
-            reverse = True
-            prev_point = points[0]
-            last_dir = point_dir
-            x = points[0][0]
-            y = points[0][1]
-
-        # Finished
-        else:
-            return points
+        # Mark as visited
+        pixels[y, x] = Pixel.Visited
 
 @nb.njit(_tuple64_array2(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
@@ -207,10 +200,10 @@ class RasterImage:
         '''
         # Create grayscale image from bitmap
         output = self.pixels.copy()
-        output[output == Pixel.Black] = 0
-        output[output == Pixel.White] = 50
-        output[output == Pixel.Outline] = 150
-        output[output == Pixel.Visited] = 255
+        output[output == Pixel.Black] = 0 # Polygons
+        output[output == Pixel.White] = 20 # Unprocessed pixels
+        output[output == Pixel.Outline] = 20 # Unvisited pixels. Should not happen here.
+        output[output == Pixel.Visited] = 50 # Pixels visited by tracing outline
         # Save to image
         self.image = Image.fromarray(output, 'L')
 
