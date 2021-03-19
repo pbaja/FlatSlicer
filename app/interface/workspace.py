@@ -3,6 +3,7 @@ import tkinter as tk
 import numpy as np
 from PIL import Image, ImageTk
 
+from utils import PerfTool
 from slicer import RasterImage
 from .view import View
 from .style import *
@@ -28,9 +29,9 @@ class WorkspaceView(View):
         '''
         self.canvas = tk.Canvas(self.frame, bg=CANVAS_BG)
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        self.canvas.bind('<MouseWheel>', self._wheel)  # with Windows and MacOS, but not Linux
-        self.canvas.bind('<Button-5>',   self._wheel)  # only with Linux, wheel scroll down
-        self.canvas.bind('<Button-4>',   self._wheel)
+        self.canvas.bind('<MouseWheel>', self._wheel)  # windows and mac
+        self.canvas.bind('<Button-5>',   self._wheel)  # linux, scroll down
+        self.canvas.bind('<Button-4>',   self._wheel)  # linux, scroll up
         self.canvas.bind('<ButtonPress-1>', lambda event: self.canvas.scan_mark(event.x, event.y))
         self.canvas.bind('<ButtonRelease-1>', self._motion_end)
         self.canvas.bind("<B1-Motion>", self._motion)
@@ -118,17 +119,16 @@ class WorkspaceView(View):
         self._img_cropped = self._img_scaled.crop(box=crop)
 
     def _update_image(self):
-        # Remove previous
-        if self._img_id:
-            self.canvas.delete(self._img_id)
-            self._tkimg = None
-            gc.collect()
-
-        # Add new
+        # Convert PIL image to TK image
         self._tkimg = ImageTk.PhotoImage(image=self._img_cropped)
-        self.canvas.delete('img')
-        self._img_id = self.canvas.create_image(self._img_pos, anchor='nw', image=self._tkimg, tag='img')
-        self.canvas.lower(self._img_id)
+        if self._img_id:
+            # Reuse canvas image object
+            self.canvas.itemconfig(self._img_id, image=self._tkimg)
+            self.canvas.coords(self._img_id, self._img_pos[0], self._img_pos[1])
+        else:
+            # Create new canvas image object
+            self._img_id = self.canvas.create_image(self._img_pos, anchor='nw', image=self._tkimg, tag='img')
+            self.canvas.lower(self._img_id)
 
     def show(self, image:RasterImage):
         '''
