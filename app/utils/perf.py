@@ -26,6 +26,9 @@ class PerfTool:
     def history(self, idx):
         return self._history[idx]
 
+    def total(self):
+        return round(sum(self._history), 2)
+
     @staticmethod
     def decorate(func):
         tool = PerfTool()

@@ -15,6 +15,7 @@ class WorkspaceView(View):
         self.canvas:tk.Canvas = None
         self._scale = 1.0
         self._anchor_id = None
+        self._raster_img = None # Raster image
         self._img = None # Original image
         self._img_scaled = None # Scaled image
         self._img_cropped = None # Cropped image
@@ -39,19 +40,51 @@ class WorkspaceView(View):
         self._anchor_id = self.canvas.create_text(0, 0, anchor='nw', text='', fill='gray', font=FONT_CANVAS)
 
         _ = (0,0,0,0)
-        self._scale_ids = [
+        self._ui_ids = [
             self.canvas.create_line(_, width=1, fill='white'),
-            self.canvas.create_line(_, width=2, fill='white', dash=(1,1))
+            self.canvas.create_line(_, width=1, fill='white'),
+            self.canvas.create_line(_, width=1, fill='white'),
+            self.canvas.create_text(0, 0, anchor='n', text='', fill='gray', font=FONT_CANVAS_UI),
+            self.canvas.create_text(0, 0, anchor='ne', text='', fill='gray', font=FONT_CANVAS_UI)
         ]
-        self._update_scale()
+        self._update_ui()
 
-    def _update_scale(self):
-        h = self.canvas.winfo_height()
-        x, y = self.canvas.canvasx(10), self.canvas.canvasy(h-10)
-        for elem in self._scale_ids:
-            width = 100
-            self.canvas.coords(elem, x, y, x+width, y)
-            self.canvas.lift(elem)
+    def _update_ui(self):
+        if self._raster_img:
+            # Calculate scale width
+            ppmm = self._raster_img.info_dpi / 25.4 # dots/inch -> pix/mm
+
+            width = ppmm * self._scale
+            if width > 275: mm = 1
+            elif width > 24: mm = 2
+            elif width > 5: mm = 10
+            else: mm = 50
+            width *= mm
+
+            # Scale lines
+            x0 = self.canvas.canvasx(10)
+            x1 = x0 + width
+            y = self.canvas.canvasy(self.canvas.winfo_height()-10)
+            self.canvas.coords(self._ui_ids[0], x0, y-5, x0, y+5)
+            self.canvas.coords(self._ui_ids[1], x0, y, x1, y)
+            self.canvas.coords(self._ui_ids[2], x1, y-5, x1, y+5)
+
+            # Scale text
+            self.canvas.itemconfig(self._ui_ids[3], text=f'{mm}mm')
+            self.canvas.coords(self._ui_ids[3], x0+(width/2), y-17)
+            
+            # Info text
+            size = self._img.size
+            mpix = round(size[0] * size[1] / 10**6, 1)
+            size = size[0]/ppmm, size[1]/ppmm
+            img = self._raster_img
+            info = f'{size[0]}mm x {size[1]}mm, {img.info_numlines} lines, {img.info_numpolygons} polygons, {mpix} Mpix in {img.info_calctime} ms'
+            self.canvas.itemconfig(self._ui_ids[4], text=info)
+            x = self.canvas.canvasx(self.canvas.winfo_width()-10)
+            self.canvas.coords(self._ui_ids[4], x, y-10)
+
+            # Lift all
+            for e in self._ui_ids: self.canvas.lift(e)
 
     def _wheel(self, event):
         '''
@@ -78,12 +111,12 @@ class WorkspaceView(View):
             self._update_image()
         # Update text
         self.canvas.itemconfig(self._anchor_id, text=f'x{round(self._scale,1)}')
-        self._update_scale()
+        self._update_ui()
 
     def _motion(self, event):
         # Drag canvas
         self.canvas.scan_dragto(event.x, event.y, gain=1)
-        self._update_scale()
+        self._update_ui()
         # Update image every 50 pixels
         pos = (event.x, event.y)
         if self._motion_pos is None: self._motion_pos = pos
@@ -150,21 +183,22 @@ class WorkspaceView(View):
         '''
         Display image on canvas
         '''
+        # Save dpi
+        self._img = image.image
+        self._raster_img = image
+        self._update_ui()
 
         # Remove previous lines
         for line_id in self._line_ids: self.canvas.delete(line_id)
         self._line_ids.clear()
 
         # Display raster image
-        self._img = image.image
         self._scale_image()
         self._crop_image()
         self._update_image()
 
         # Display polygons
         colors = ['#EE4D4D', '#FF884D', '#FFC44D', '#8BC94D', '#4DDBC4', '#4DC4FF', '#5E94FF', '#A071FF', '#FF4DA5']
-        #colors = ['#4DA326', '#E84133', '#CF901F', '#2FA49C', '#782EA0']
-        #colors = ["#%06x"%random.randint(0,16777215) for _ in range(10)]
         offset = self.canvas.coords(self._anchor_id)
         for i, polygon in enumerate(image.polygons):
             # Flatten array of points

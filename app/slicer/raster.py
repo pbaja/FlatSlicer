@@ -5,7 +5,7 @@ import numba as nb
 from typing import List
 from pathlib import Path
 from enum import IntEnum
-from PIL import Image
+from PIL import Image, ImageOps
 
 from utils import Config, PerfTool, rdp_simplify_all
 
@@ -136,6 +136,10 @@ class RasterImage:
         self.pixels:np.ndarray = None
         self.image:Image = None
         self.polygons:List = None
+
+        self.info_dpi:float = None
+        self.info_numlines:int = None
+        self.info_numpolygons:int = None
         
     def load(self) -> bool:
         '''
@@ -151,6 +155,8 @@ class RasterImage:
                 img = background
             # Convert to grayscale
             img = img.convert('L')
+            # Add 1pix border for simpler algorithms (iteration)
+            img = ImageOps.expand(img, border=10, fill='white')
             # Convert to array
             self.pixels = np.asarray(img).copy()
             # Make it binary
@@ -166,6 +172,9 @@ class RasterImage:
         '''
         Tries to convert binary array with image data to polygons
         '''
+        # Update dpi
+        self.info_dpi = config.get_value('import.dpi')
+
         perf = PerfTool()
 
         # Extract outline pixels
@@ -185,14 +194,17 @@ class RasterImage:
         perf.tick()
 
         # Print stats
-        total_lines = sum([len(p) for p in self.polygons])
+        self.info_numpolygons = len(self.polygons)
+        self.info_numlines = sum([len(p) for p in self.polygons])
+        self.info_calctime = perf.total()
+
         log.info(\
             f'Image {self.image_path.name},'\
             f' convert: {perf.history(-3)} ms,'\
             f' trace: {perf.history(-2)} ms,'\
             f' simplify: {perf.history(-1)} ms,'\
-            f' {len(self.polygons)} polygons,'\
-            f' {total_lines} (+{total_lines_before-total_lines}) lines')
+            f' {self.info_numpolygons} polygons,'\
+            f' {self.info_numlines} (+{total_lines_before-self.info_numlines}) lines')
 
     def render(self) -> None:
         '''

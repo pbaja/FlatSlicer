@@ -159,6 +159,7 @@ class Window:
                 cfg.set_value(path, item.get())
             elif isinstance(item, tk.Listbox):
                 cfg.set_value(path, list(item.get(0, item.size())))
+                
 
     def run(self):
         '''
