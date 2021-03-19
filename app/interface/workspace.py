@@ -43,11 +43,10 @@ class WorkspaceView(View):
         '''
         # Respond to Linux (event.num) or Windows (event.delta) wheel event
         scale = 1.0
-        if event.num == 5 or event.delta == -120: scale = 0.75
-        if event.num == 4 or event.delta == 120: scale = 1.333
-        # Clamp scale
         prev_scale = self._scale
-        self._scale *= scale
+        if event.num == 5 or event.delta == -120: self._scale /= 1.25
+        if event.num == 4 or event.delta == 120: self._scale *= 1.25
+        # Clamp scale
         if self._scale > 10.0: self._scale = 10.0
         if self._scale < 0.1: self._scale = 0.1
         scale = self._scale / prev_scale
@@ -63,7 +62,7 @@ class WorkspaceView(View):
             self._update_image()
         # Constrain view box
        # self.canvas.configure(scrollregion=self.canvas.bbox('all'))
-        self.canvas.itemconfig(self._text_id, text=f'x{self._scale}')
+        self.canvas.itemconfig(self._text_id, text=f'x{round(self._scale,1)}')
 
     def _motion(self, event):
         # Drag canvas
@@ -78,8 +77,9 @@ class WorkspaceView(View):
 
     def _motion_end(self, event):
         # Update image
-        self._crop_image()
-        self._update_image()
+        if self._tkimg is not None:
+            self._crop_image()
+            self._update_image()
 
     def _scale_image(self):
         # Calculate new size

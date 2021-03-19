@@ -35,48 +35,50 @@ _array2_float32 = nb.types.Array(nb.float32, 2, 'C')
 _array1_bool = nb.types.Array(nb.boolean, 1, 'C')
 _list_array1_float32 = nb.types.List(_array1_float32)
 
-@nb.njit(_list_array1_float32(_array2_float32, nb.float64))
-def _rdp(points, epsilon):
-    start = 0
-    end = len(points)-1
-    stack = [[start, end]]
-    mask = np.ones(end - start + 1, dtype=np.bool8)
+@nb.njit(_list_array1_float32(_array2_float32, nb.float64, nb.int64, nb.int64))
+def _rdp(points, epsilon, start, end):
+    _start, _end = start, end
+    stack = [[_start, _end]]
+    mask = np.ones(_end - _start + 1, dtype=np.bool8)
 
     while stack:
         # Next in stack
-        start, end = stack.pop()
+        _start, _end = stack.pop()
 
         # Find max distance
         dist_max = 0.0
-        dist_idx = start
-        for idx in range(dist_idx + 1, end):
-            if mask[idx]:
-                dist = _pldist(points[idx], points[start], points[end])
+        dist_idx = _start
+        for idx in range(dist_idx + 1, _end):
+            if mask[idx - start]:
+                dist = _pldist(points[idx], points[_start], points[_end])
                 if dist > dist_max:
                     dist_idx = idx
                     dist_max = dist
 
         # Check if distance is greater than epsilon
         if dist_max > epsilon:
-            stack.append([start, dist_idx])
-            stack.append([dist_idx, end])
+            stack.append([_start, dist_idx])
+            stack.append([dist_idx, _end])
         else:
-            for idx in range(start + 1, end):
-                mask[idx] = False
+            for idx in range(_start + 1, _end):
+                mask[idx - start] = False
 
     # Apply mask
     result = []
-    for idx in range(len(points)):
-        if mask[idx]:
+    for idx in range(start, end):
+        if mask[start-idx]:
             result.append(points[idx])
     return result
 
-def _rdp_all(arrays, epsilon):
-    result = []
-    for idx in nb.prange(len(arrays)):
-        result.append(_rdp(arrays[idx], epsilon))
-    return result
+_array2_int64 = nb.types.Array(nb.int64, 2, 'C')
+_list_list_array1_float32 = nb.types.List(_list_array1_float32)
 
+@nb.njit(_list_list_array1_float32(_array2_float32, _array2_int64, nb.float32))
+def _rdp_all(points, indexes, epsilon):
+    result = []
+    for i in range(len(indexes)):
+        result.append(_rdp(points, epsilon, indexes[i][0], indexes[i][1]))
+    return result
 
 def rdp_simplify(points, epsilon):
     # Convert list of tuples to numpy array
@@ -85,11 +87,23 @@ def rdp_simplify(points, epsilon):
     return _rdp(array, epsilon)
 
 def rdp_simplify_all(polygons, epsilon):
-    # Convert lists to arrays
-    arrays = []
+
+    num_points = sum([len(p) for p in polygons])
+    num_polygons = len(polygons)
+
+    points = np.zeros([num_points, 2], dtype=np.float32)
+    indexes = np.zeros([num_polygons, 2], dtype=np.int64)
+    curr_index = 0
+    curr_point = 0
+
     for polygon in polygons:
-        array = np.array(polygon, dtype=np.float32)
-        arrays.append(array)
-    # Simplify all
-    print(nb.typeof(arrays))
-    return _rdp_all(arrays, epsilon)
+        # Append start-end index
+        indexes[curr_index][0] = curr_point # Start (inclusive)
+        indexes[curr_index][1] = curr_point + len(polygon) # End (exclusive)
+        curr_index += 1
+        # Append points
+        for point in polygon:
+            points[curr_point] = point
+            curr_point += 1
+
+    return _rdp_all(points, indexes, epsilon)

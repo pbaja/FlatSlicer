@@ -103,6 +103,7 @@ def _travel(pixels, x, y) -> List:
 
         # No outline in any direction
         else:
+            #TODO: Try going to first point, maybe in the other direction
             points.append(prev_point)
             return points
 
