@@ -127,13 +127,15 @@ def _trace_outline(pixels) -> List:
 
 class RasterImage:
     '''
-    Allows loading raster images (png, jpg) from disk and vectorizing them 
+    Allows loading raster images (png, jpg) from disk and extracting polygons from them
     '''
 
     def __init__(self, image_path:Path) -> None:
-        self.unique_id = uuid.uuid4()
-        self.image_path:Path = image_path.resolve()
+        self.unique_id:UUID = uuid.uuid4()
         self.pixels:np.ndarray = None
+        self.traced:bool = False
+
+        self.image_path:Path = image_path.resolve()
         self.image:Image = None
         self.polygons:List = None
 
@@ -193,6 +195,9 @@ class RasterImage:
             self.polygons = rdp_simplify_all(self.polygons, epsilon)
         perf.tick()
 
+        # Done
+        self.traced = True
+
         # Print stats
         self.info_numpolygons = len(self.polygons)
         self.info_numlines = sum([len(p) for p in self.polygons])
@@ -208,7 +213,7 @@ class RasterImage:
 
     def render(self) -> None:
         '''
-        Creates image from numpy array
+        Creates PIL image from numpy array
         '''
         # Create grayscale image from bitmap
         output = self.pixels.copy()

@@ -6,7 +6,7 @@ from ctypes import windll, create_string_buffer, byref
 from pathlib import Path
 
 from utils import Event
-from slicer import RasterImage
+from slicer import RasterImage, Gcode
 from .style import *
 from .sidebar import SidebarView
 from .workspace import WorkspaceView
@@ -134,7 +134,13 @@ class Window:
         '''
         Changes or refreshes currently displayed image
         '''
-        self._workspace.show(image)
+        self._workspace.show_img(image)
+
+    def show_gcode(self, gcode:Gcode):
+        '''
+        Changes or refreshes currently displayed gcode. Hides polygon lines.
+        '''
+        self._workspace.show_gcode(gcode)
 
     def load_config(self, cfg):
         '''

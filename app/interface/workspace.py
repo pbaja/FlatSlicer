@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageTk
 
 from utils import PerfTool
-from slicer import RasterImage
+from slicer import RasterImage, Gcode
 from .view import View
 from .style import *
 
@@ -179,7 +179,7 @@ class WorkspaceView(View):
             self._img_id = self.canvas.create_image(self._img_pos, anchor='nw', image=self._tkimg, tag='img')
             self.canvas.lower(self._img_id)
 
-    def show(self, image:RasterImage):
+    def show_img(self, image:RasterImage):
         '''
         Display image on canvas
         '''
@@ -209,3 +209,6 @@ class WorkspaceView(View):
             # Add line
             line_id = self.canvas.create_line(*flat_points, fill=colors[i%len(colors)], width=int(self._scale))
             self._line_ids.append(line_id)
+
+    def show_gcode(self, gcode:Gcode):
+        print('showing gcode')
