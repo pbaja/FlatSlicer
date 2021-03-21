@@ -128,6 +128,7 @@ class Window:
         filename = path.name.rsplit('.', 1)[0] + '.gcode'
         filetypes = [('Gcode', '*.gcode')]
         gcode_path = filedialog.asksaveasfilename(parent=self._root, title='Select filename', initialfile=filename, filetypes=filetypes)
+        gcode_path = Path(gcode_path)
         self.export_file(path, gcode_path)
 
     def show_image(self, image:RasterImage):

@@ -1,3 +1,4 @@
+import logging as log
 from pathlib import Path
 
 from slicer import Slicer, Gcode, RasterImage
@@ -29,6 +30,7 @@ class Interface:
         self.window.close_pressed += self._close_pressed
         self.window.trace_file += self._trace_file
         self.window.generate_file += self._genereate_file
+        self.window.export_file += self._export_file
 
     def load_config(self) -> None:
         '''
@@ -72,5 +74,16 @@ class Interface:
         # Generate
         gcode = Gcode(img)
         gcode.generate(self.config)
+        img.gcode = gcode
         # Show
         self.window.show_gcode(gcode)
+
+    def _export_file(self, path:Path, gcode_path:Path) -> None:
+        # Get image
+        img = self.slicer.get_image(file_path=path, load=True)
+        if not img.traced: self._trace_file(path)
+        # Save if generated
+        if img.gcode is None:
+            log.warn('Tried to save gcode, but no gcode has been generated')
+            return
+        img.gcode.save(gcode_path)

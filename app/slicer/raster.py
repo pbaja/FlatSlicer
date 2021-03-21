@@ -134,6 +134,7 @@ class RasterImage:
         self.unique_id:UUID = uuid.uuid4()
         self.pixels:np.ndarray = None
         self.traced:bool = False
+        self.gcode = None
 
         self.image_path:Path = image_path.resolve()
         self.image:Image = None
