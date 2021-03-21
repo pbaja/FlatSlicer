@@ -79,7 +79,7 @@ class LaserJob:
         '''
         self.power(self.min_power)
         self.speed(self.travel_speed)
-        self.move(target)
+        self.move(target, rapid=True)
 
     def burn(self, target):
         '''

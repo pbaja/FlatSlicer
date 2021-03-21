@@ -179,6 +179,10 @@ class WorkspaceView(View):
             self._img_id = self.canvas.create_image(self._img_pos, anchor='nw', image=self._tkimg, tag='img')
             self.canvas.lower(self._img_id)
 
+    def _clear_lines(self):
+        for line_id in self._line_ids: self.canvas.delete(line_id)
+        self._line_ids.clear()
+
     def show_img(self, image:RasterImage):
         '''
         Display image on canvas
@@ -189,8 +193,7 @@ class WorkspaceView(View):
         self._update_ui()
 
         # Remove previous lines
-        for line_id in self._line_ids: self.canvas.delete(line_id)
-        self._line_ids.clear()
+        self._clear_lines()
 
         # Display raster image
         self._scale_image()
@@ -211,4 +214,35 @@ class WorkspaceView(View):
             self._line_ids.append(line_id)
 
     def show_gcode(self, gcode:Gcode):
-        print('showing gcode')
+
+        # Remove previous lines
+        self._clear_lines()
+        offset = self.canvas.coords(self._anchor_id)
+
+        # Draw outline lines
+        px, py = 0, 0
+        points = []
+        for gstr in gcode.job.cmd_outline:
+            # Parse
+            params = gstr.split()
+            if len(params) == 0: continue
+            cmd = params[0]
+
+            # Move command
+            if cmd == 'G0' or cmd == 'G1':
+                # Target x, y
+                tx, ty = px, py
+                for param in params[1:]:
+                    if param[0] == 'X': tx = float(param[1:])
+                    elif param[0] == 'Y': ty = float(param[1:])
+                # Draw line
+                fill = '#E67E22' if cmd == 'G1' else '#D35400'
+                points = [
+                    px * self._scale + offset[0], 
+                    py * self._scale + offset[1], 
+                    tx * self._scale + offset[0], 
+                    ty * self._scale + offset[1]
+                    ]
+                line_id = self.canvas.create_line(*points, fill=fill, width=int(self._scale))
+                self._line_ids.append(line_id)
+                px, py = tx, ty

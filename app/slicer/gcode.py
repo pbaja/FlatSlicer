@@ -24,10 +24,10 @@ class Gcode:
         self.job.begin_outline()
         for polygon in self._img.polygons:
             # Move to start
-            self.job.move(polygon[0])
+            self.job.travel(polygon[0])
             # Burn lines
-            for end in polygon[1::2]:
-                self.job.burn(end)
+            for point in polygon[1:]:
+                self.job.burn(point)
         self.job.power_off()
         perf.tick()
 
