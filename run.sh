@@ -12,6 +12,10 @@ then
     
     echo "Installing requirements"
     pip install -r requirements.txt || (rm -r .venv ; exit 3)
+else
+    echo "Activating virtual enviroment"
+    source .venv/bin/activate || (rm -r .venv ; exit 2)
+fi
 
 # Run application
 echo "Starting FlatSlicer"

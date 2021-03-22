@@ -6,7 +6,6 @@ from utils import Event
 from .style import *
 from .view import View
 
-
 class SidebarView(View):
     def __init__(self, parent):
         super().__init__(parent)

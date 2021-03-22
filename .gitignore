@@ -4,6 +4,7 @@
 
 # Excluding
 !/app/
+!/img/
 !/fonts/
 !/README.md
 !/.gitignore

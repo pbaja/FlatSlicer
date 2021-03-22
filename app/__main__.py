@@ -1,6 +1,8 @@
 import logging as log
 import sys
 
+from version import VERSION_STR
+
 if __name__ == '__main__':
 
     # Python version check
@@ -12,7 +14,7 @@ if __name__ == '__main__':
     # Python architecture check
     if sys.maxsize <= 2**32//2:
         print(f'For best results Python 64bit is required.')
-        if 'ignore_x64' in sys.argv[1:]:
+        if 'ignore_x64' not in sys.argv[1:]:
             sys.exit(1)
 
     # Configure logging module
@@ -22,7 +24,7 @@ if __name__ == '__main__':
     log.getLogger('numba.core.typeinfer').setLevel(log.WARN)
     log.getLogger('PIL.PngImagePlugin').setLevel(log.WARN)
     log.basicConfig(level=log.DEBUG, format='[%(levelname)s] %(message)s')
-    log.info(f'Starting')
+    log.info(f'Starting FlatSlicer v{VERSION_STR}')
 
     # Load configuration
     from utils import Config

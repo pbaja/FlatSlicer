@@ -109,7 +109,7 @@ class LaserJob:
         self.power(self.min_power)
         self.speed(self.travel_speed)
         self.gcode("G21") # Use metric system
-        self.gcode("G90") # Use absolute positioning
+        self.gcode("G90") # Use absolute positioning (G21->relative)
         self.gcode("M18 S10") # Disable steppers after 10s of inactivity
         self.gcode("M201 X5000.00 Y5000.00") # Set max acceleration. Default is 500mm/s^2, Prusa uses 9000mm/s^2 for travel
         self.gcode("M204 T5000.00") # Set print acceleration. Default is 500mm/s^2

@@ -235,7 +235,7 @@ class WorkspaceView(View):
                 tx = px if cmd.x is None else cmd.x
                 ty = py if cmd.y is None else cmd.y
                 # Draw polygon if skipped first and cmd changed
-                if not single_color and prev_cmd is not None and cmd != prev_cmd:
+                if not single_color and prev_cmd is not None and cmd.rapid != prev_cmd.rapid:
                     self._add_polyline(points, prev_cmd, line_color, travel_color, width)
                     points.clear()
                     points += [px * self._scale + offset[0], py * self._scale + offset[1]]

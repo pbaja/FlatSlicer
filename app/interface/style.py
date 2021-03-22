@@ -1,5 +1,6 @@
 # Window
-WINDOW_TITLE = 'Flat Slicer'
+from version import VERSION_STR
+WINDOW_TITLE = f'Flat Slicer v{VERSION_STR}'
 WINDOW_SIZE = (1280, 720)
 
 
