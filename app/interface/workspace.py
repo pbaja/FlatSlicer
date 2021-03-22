@@ -3,6 +3,7 @@ import tkinter as tk
 import numpy as np
 from PIL import Image, ImageTk
 
+
 from utils import PerfTool
 from slicer import RasterImage, Gcode
 from .view import View
@@ -103,7 +104,7 @@ class WorkspaceView(View):
         mouse_x, mouse_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         self.canvas.scale('all', mouse_x, mouse_y, scale, scale)
         for line_id in self._line_ids:
-            self.canvas.itemconfig(line_id, width=math.ceil(self._scale))
+            self.canvas.itemconfig(line_id[0], width=math.ceil(line_id[1] * self._scale))
         # Scale image
         if self._tkimg is not None:
             self._scale_image()
@@ -180,7 +181,7 @@ class WorkspaceView(View):
             self.canvas.lower(self._img_id)
 
     def _clear_lines(self):
-        for line_id in self._line_ids: self.canvas.delete(line_id)
+        for line_id in self._line_ids: self.canvas.delete(line_id[0])
         self._line_ids.clear()
 
     def show_img(self, image:RasterImage):
@@ -211,7 +212,13 @@ class WorkspaceView(View):
                 flat_points.append((y + 0.5)*self._scale + offset[1])
             # Add line
             line_id = self.canvas.create_line(*flat_points, fill=colors[i%len(colors)], width=int(self._scale))
-            self._line_ids.append(line_id)
+            self._line_ids.append((line_id, int(self._scale)))
+
+    def _add_polyline(self, points, cmd):
+        fill = CANVAS_LINE_OUTLINE if cmd == 'G1' else CANVAS_LINE_TRAVEL
+        width = 1.0 if cmd == 'G1' else 0.5
+        line_id = self.canvas.create_line(*points, fill=fill, width=width)
+        self._line_ids.append((line_id, width))
 
     def show_gcode(self, gcode:Gcode):
 
@@ -220,8 +227,9 @@ class WorkspaceView(View):
         offset = self.canvas.coords(self._anchor_id)
 
         # Draw outline lines
+        prev_cmd = 'G0'
         px, py = 0, 0
-        points = []
+        points = [px * self._scale + offset[0], py * self._scale + offset[1]]
         for gstr in gcode.job.cmd_outline:
             # Parse
             params = gstr.split()
@@ -235,14 +243,20 @@ class WorkspaceView(View):
                 for param in params[1:]:
                     if param[0] == 'X': tx = float(param[1:])
                     elif param[0] == 'Y': ty = float(param[1:])
-                # Draw line
-                fill = '#E67E22' if cmd == 'G1' else '#D35400'
-                points = [
-                    px * self._scale + offset[0], 
-                    py * self._scale + offset[1], 
-                    tx * self._scale + offset[0], 
-                    ty * self._scale + offset[1]
-                    ]
-                line_id = self.canvas.create_line(*points, fill=fill, width=int(self._scale))
-                self._line_ids.append(line_id)
+                # Add point to list of points
+                if cmd != prev_cmd:
+                    # Cmd changed, draw polygon
+                    self._add_polyline(points, prev_cmd)
+                    points.clear()
+                    points += [px * self._scale + offset[0], py * self._scale + offset[1]]
+                points += [tx * self._scale + offset[0], ty * self._scale + offset[1]]
+                # Save prev values
+                prev_cmd = cmd
                 px, py = tx, ty
+        if len(points) >= 4:
+            self._add_polyline(points, prev_cmd)
+        
+
+
+
+                

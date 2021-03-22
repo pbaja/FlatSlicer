@@ -1,4 +1,5 @@
 # Ignore all top level stuff by default
+# This prevents adding files by accident
 /*
 
 # Excluding
@@ -6,6 +7,8 @@
 !/fonts/
 !/README.md
 !/.gitignore
+!/workspace.code-workspace
+!/requirements.txt
 !/run.*
 
 # Python stuff
