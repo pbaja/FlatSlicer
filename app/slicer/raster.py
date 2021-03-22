@@ -174,6 +174,7 @@ class RasterImage:
             self.pixels[self.pixels <= 127] = Pixel.Black
             self.pixels[self.pixels > 127] = Pixel.White
             # Image has been successfully loaded
+            self.info_height_px = img.size[1]
             return True
         except Exception as e:
             print(e)
@@ -185,6 +186,8 @@ class RasterImage:
         '''
         # Update dpi
         self.info_dpi = config.get_value('import.dpi')
+        self.info_mm2pix = self.info_dpi / 25.4
+        self.info_height = self.info_height_px / self.info_mm2pix
 
         perf = PerfTool()
 

@@ -6,6 +6,17 @@ class LaserJobTarget(IntEnum):
     Infill = 2
     Footer = 3
 
+class LaserUnit(IntEnum):
+    Pixels = 0
+    Milimeters = 1
+
+class LaserMove:
+    def __init__(self, target, unit:LaserUnit):
+        self.x = target[0]
+        self.y = target[1] if len(target) > 1 else None
+        self.z = target[2] if len(target) > 2 else None
+        self.unit = unit
+
 class LaserJob:
     def __init__(self, config):
         # Config
@@ -36,6 +47,14 @@ class LaserJob:
         self._speed = 0
         self._pos = [-1, -1, -1]
 
+    def apply(self, height):
+        '''
+        Goes over all commands, flips Y coordinate and converts pixels to mm
+        This is done here, at the end, because all other libs have 0,0 in top left corner.
+        '''
+
+
+
     def __str__(self):
         all_commands = self.cmd_header + (self.cmd_infill * self.infill_passes) + (self.cmd_outline * self.outline_passes) + self.cmd_footer
         return "\n".join(all_commands)
@@ -59,9 +78,11 @@ class LaserJob:
 
     def begin_outline(self):
         self.cmd_target = LaserJobTarget.Outline
+        self.comment('Outline pass')
 
     def begin_infill(self):
         self.cmd_target = LaserJobTarget.Infill
+        self.comment('Infill pass')
 
     def end(self):
         self.cmd_target = LaserJobTarget.Footer
@@ -149,8 +170,9 @@ class LaserJob:
 
     def power_off(self):
         '''Powers off the laser'''
-        self._append(self.off_command)
-        self._power = 0
+        if self._power != 0:
+            self._append(self.off_command)
+            self._power = 0
 
     def wait(self, ms):
         '''Waits for given ms'''

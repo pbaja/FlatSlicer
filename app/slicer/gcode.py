@@ -38,8 +38,8 @@ def intersect(points, y):
         if x != -1: intersections.append(x)
     return intersections
 
-@nb.njit(nb.int32(array2_float64, array1_float64, nb.float64))
-def closest(lines, prev, float_max):
+@nb.njit(nb.int32(array2_float64, array1_float64, nb.float64, nb.float64))
+def closest(lines, prev, float_max, max_dist):
     lines_len = len(lines)
     closest_dist = float_max
     closest_idx = 0
@@ -52,7 +52,7 @@ def closest(lines, prev, float_max):
         if dist < closest_dist:
             closest_idx = idx
             closest_dist = dist
-            if dist < 5: break # Good enough
+            if dist < max_dist: break # Good enough
     return closest_idx
 
 class Gcode:
@@ -62,7 +62,6 @@ class Gcode:
     def __init__(self, img:RasterImage):
         self._img = img
         self.job = None
-
         self.info_calctime = None
 
     def _generate_outline(self, config):
@@ -108,6 +107,7 @@ class Gcode:
         infill_lines = []
         drawing_height = global_bbox[3] - global_bbox[2]
         infill_spacing = config.get_value('infill.line_spacing')
+        infill_spacing *= self._img.info_mm2pix # Convert mm to pixels
         sn = int(drawing_height / infill_spacing)
         for s in range(sn):
             # Current y coord
@@ -140,7 +140,7 @@ class Gcode:
         while lines_left > 0:
 
             # Find closest
-            closest_idx = closest(infill_lines, prev, float_max)
+            closest_idx = closest(infill_lines, prev, float_max, self._img.info_mm2pix * 0.1)
 
             # closest_dist = float_max
             # closest_idx = 0

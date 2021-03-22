@@ -26,7 +26,7 @@ class SidebarView(View):
 
         widget = SidebarWidget(self.frame, 'Import')
         widget.add_entry('Image DPI', 'import.dpi:float')
-        widget.add_entry('Epsilon [mm]', 'import.epsilon:float')
+        #widget.add_entry('Epsilon [mm]', 'import.epsilon:float')
         self.items.update(widget.items)
 
         widget = SidebarWidget(self.frame, 'Global')

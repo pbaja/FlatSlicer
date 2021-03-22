@@ -72,6 +72,7 @@ class Interface:
         img = self.slicer.get_image(file_path=path, load=True)
         if not img.traced: self._trace_file(path)
         # Generate
+        self.window.dump_config(self.config)
         gcode = Gcode(img)
         gcode.generate(self.config)
         img.gcode = gcode

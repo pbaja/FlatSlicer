@@ -55,9 +55,7 @@ class WorkspaceView(View):
     def _update_ui(self):
         if self._raster_img:
             # Calculate scale width
-            ppmm = self._raster_img.info_dpi / 25.4 # dots/inch -> pix/mm
-
-            width = ppmm * self._scale
+            width = self._raster_img.info_mm2pix * self._scale
             if width > 275: mm = 1
             elif width > 24: mm = 2
             elif width > 5: mm = 10
@@ -79,7 +77,8 @@ class WorkspaceView(View):
             # Info text
             size = self._img.size
             mpix = round(size[0] * size[1] / 10**6, 1)
-            size = size[0]/ppmm, size[1]/ppmm
+            mm2pix = self._raster_img.info_mm2pix
+            size = size[0]/mm2pix, size[1]/mm2pix
             img = self._raster_img
             info = f'{size[0]}mm x {size[1]}mm, {img.info_numlines} lines, {img.info_numpolygons} polygons, {mpix} Mpix in {img.info_calctime} ms'
             if self._gcode_calctime is not None:
@@ -225,10 +224,10 @@ class WorkspaceView(View):
         offset = self.canvas.coords(self._anchor_id)
         points = [px * self._scale + offset[0], py * self._scale + offset[1]]
 
-        skip_coloring = False
+        single_color = False
         if len(commands) > 40_000:
-            log.warn(f'Too many lines. Will skip workspace coloring to save performance.')
-            skip_coloring = True
+            log.warn(f'Too many lines. Travel moves will be displayed with same color as burn lines.')
+            single_color = True
 
         for gstr in commands:
             # Parse
@@ -244,7 +243,7 @@ class WorkspaceView(View):
                     if param[0] == 'X': tx = float(param[1:]) + 0.5
                     elif param[0] == 'Y': ty = float(param[1:]) + 0.5
                 # Draw polygon if skipped first and cmd changed
-                if not skip_coloring and prev_cmd is not None and cmd != prev_cmd:
+                if not single_color and prev_cmd is not None and cmd != prev_cmd:
                     self._add_polyline(points, prev_cmd, line_color, travel_color, width)
                     points.clear()
                     points += [px * self._scale + offset[0], py * self._scale + offset[1]]
@@ -262,8 +261,9 @@ class WorkspaceView(View):
         # Arrow
         arrow = tk.NONE
         if len(points) == 4:
-            sqlen = (points[2]-points[0])**2 + (points[3]-points[1])**2
-            if sqlen > 10 ** 2: arrow = tk.LAST
+            length = np.sqrt((points[2]-points[0])**2 + (points[3]-points[1])**2)
+            if length * self._scale / self._raster_img.info_mm2pix > 2.0: # Add arrows for >2.0mm * scale
+                arrow = tk.LAST
         # Add line
         line_id = self.canvas.create_line(*points, fill=fill, arrow=arrow, width=int(width*self._scale))
         self._line_ids.append((line_id, width))
