@@ -7,3 +7,4 @@ Including loading mages and processing them.
 from .slicer import Slicer
 from .raster import RasterImage
 from .gcode import Gcode
+from .job import LaserMove

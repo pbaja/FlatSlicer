@@ -10,12 +10,34 @@ class LaserUnit(IntEnum):
     Pixels = 0
     Milimeters = 1
 
-class LaserMove:
-    def __init__(self, target, unit:LaserUnit):
-        self.x = target[0]
-        self.y = target[1] if len(target) > 1 else None
-        self.z = target[2] if len(target) > 2 else None
+class LaserCmd:
+    def valid(self):
+        return True
+
+class LaserMove(LaserCmd):
+    def __init__(self, x, y, z, unit:LaserUnit, rapid:bool):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.rapid = rapid
         self.unit = unit
+    def valid(self):
+        return self.x or self.y or self.z
+    def __str__(self):
+        if not self.valid():
+            return ''
+        args = []
+        if self.x: args.append(f"X{self.x}")
+        if self.y: args.append(f"Y{self.y}")
+        if self.z: args.append(f"Z{self.z}")
+        args.insert(0, 'G0' if self.rapid else 'G1')
+        return ' '.join(args)
+
+class LaserRaw(LaserCmd):
+    def __init__(self, code):
+        self.code = code
+    def __str__(self):
+        return self.code
 
 class LaserJob:
     def __init__(self, config):
@@ -47,16 +69,16 @@ class LaserJob:
         self._speed = 0
         self._pos = [-1, -1, -1]
 
-    def apply(self, height):
+    def apply(self, height, pix2mm):
         '''
         Goes over all commands, flips Y coordinate and converts pixels to mm
         This is done here, at the end, because all other libs have 0,0 in top left corner.
         '''
-
-
+        pass
 
     def __str__(self):
         all_commands = self.cmd_header + (self.cmd_infill * self.infill_passes) + (self.cmd_outline * self.outline_passes) + self.cmd_footer
+        all_commands = [str(cmd) for cmd in all_commands if cmd.valid()]
         return "\n".join(all_commands)
 
     def begin_header(self):
@@ -134,46 +156,45 @@ class LaserJob:
 
     def comment(self, comment):
         '''Adds comment'''
-        if len(comment) == 0: self._append('')
-        else: self._append(f'; {comment}')
+        if len(comment) == 0: self._append(LaserRaw(''))
+        else: self._append(LaserRaw(f'; {comment}'))
 
     def gcode(self, command):
         '''Adds raw gcode to the list of commands'''
-        self._append(command)
+        self._append(LaserRaw(command))
 
-    def move(self, pos, rapid=False):
+    def move(self, pos, unit=LaserUnit.Pixels, rapid=False):
         '''Moves head to given x,y[,z] coordinates in mm'''
 
-        args = []
-        if abs(self._pos[0]-pos[0]) > 0.001: args.append(f"X{round(pos[0] + self.offset[0], 3)}")
-        if abs(self._pos[1]-pos[1]) > 0.001: args.append(f"Y{round(pos[1] + self.offset[1], 3)}")
-        if len(pos) > 2 and abs(self._pos[2]-pos[2]) > 0.001: args.append(f"Z{round(pos[2] + self.offset[2], 3)}")
+        x, y, z = None, None, None
+        if abs(self._pos[0]-pos[0]) > 0.001: x = round(pos[0] + self.offset[0], 3)
+        if abs(self._pos[1]-pos[1]) > 0.001: y = round(pos[1] + self.offset[1], 3)
+        if len(pos) > 2 and abs(self._pos[2]-pos[2]) > 0.001: z = round(pos[2] + self.offset[2], 3)
 
-        if len(args) > 1:
-            args.insert(0, 'G0' if rapid else 'G1')
-            self._append(' '.join(args))
+        m = LaserMove(x, y, z, unit=unit, rapid=rapid)
+        if m is not None: self._append(m)
 
     def speed(self, speed:float):
         '''Changes movement speed. In mm/s'''
         if abs(self._speed-speed) > 0.001:
             speed_mm_min = round(float(speed) * 60, 3)  # Convert mm/s to mm/min
-            self._append(f"G1 F{speed_mm_min}")
+            self._append(LaserRaw(f"G1 F{speed_mm_min}"))
             self._speed = speed
 
     def power(self, power:float, sync=True):
         '''Sets laser power, range from 0.0 to 100.0'''
         if abs(self._power-power) > 0.001:
             power_256 = int(float(power)/100.0*255)
-            if sync: self._append("M400")
-            self._append(self.on_command.replace("{power}", str(power_256)))
+            if sync: self._append(LaserRaw("M400"))
+            self._append(LaserRaw(self.on_command.replace("{power}", str(power_256))))
             self._power = power
 
     def power_off(self):
         '''Powers off the laser'''
         if self._power != 0:
-            self._append(self.off_command)
+            self._append(LaserRaw(self.off_command))
             self._power = 0
 
     def wait(self, ms):
         '''Waits for given ms'''
-        self._append(f"G4 P{int(ms)}")
+        self._append(LaserRaw(f"G4 P{int(ms)}"))

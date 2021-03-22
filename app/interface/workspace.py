@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 
 from utils import PerfTool
-from slicer import RasterImage, Gcode
+from slicer import RasterImage, Gcode, LaserMove
 from .view import View
 from .style import *
 
@@ -229,19 +229,11 @@ class WorkspaceView(View):
             log.warn(f'Too many lines. Travel moves will be displayed with same color as burn lines.')
             single_color = True
 
-        for gstr in commands:
-            # Parse
-            params = gstr.split()
-            if len(params) == 0: continue
-            cmd = params[0]
-
-            # Move command
-            if cmd == 'G0' or cmd == 'G1':
+        for cmd in commands:
+            if isinstance(cmd, LaserMove):
                 # Target x, y
-                tx, ty = px, py
-                for param in params[1:]:
-                    if param[0] == 'X': tx = float(param[1:]) + 0.5
-                    elif param[0] == 'Y': ty = float(param[1:]) + 0.5
+                tx = px if cmd.x is None else cmd.x
+                ty = py if cmd.y is None else cmd.y
                 # Draw polygon if skipped first and cmd changed
                 if not single_color and prev_cmd is not None and cmd != prev_cmd:
                     self._add_polyline(points, prev_cmd, line_color, travel_color, width)
@@ -256,8 +248,8 @@ class WorkspaceView(View):
 
     def _add_polyline(self, points, cmd, line_color, travel_color, width):
         # Properties
-        fill = line_color if cmd == 'G1' else travel_color
-        if cmd == 'G0': width *= 0.5
+        fill = travel_color if cmd.rapid else line_color 
+        if cmd == cmd.rapid: width *= 0.5
         # Arrow
         arrow = tk.NONE
         if len(points) == 4:

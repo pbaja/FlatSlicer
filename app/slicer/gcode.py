@@ -3,7 +3,7 @@ import numpy as np
 import numba as nb
 from pathlib import Path
 
-from .job import LaserJob
+from .job import LaserJob, LaserUnit
 from .raster import RasterImage
 from utils import PerfTool
 
@@ -170,7 +170,7 @@ class Gcode:
         # Prepare job
         self.job = LaserJob(config)
         self.job.begin_header()
-        self.job.move([0,0,0])
+        self.job.move([0,0,0], unit=LaserUnit.Milimeters)
         self.perf = PerfTool()
 
         # Outline
