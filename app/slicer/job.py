@@ -21,6 +21,7 @@ class LaserMove(LaserCmd):
         self.z = z
         self.rapid = rapid
         self.unit = unit
+        self.applied = False
     def valid(self):
         return self.x or self.y or self.z
     def __str__(self):
@@ -69,12 +70,29 @@ class LaserJob:
         self._speed = 0
         self._pos = [-1, -1, -1]
 
+    def _apply(self, commands, height_mm, pix2mm):
+        for cmd in commands:
+            # Only move commands
+            if not isinstance(cmd, LaserMove): continue
+            # Skip already processed
+            if cmd.applied: continue
+            cmd.applied = True
+            # Convert pixels to mm
+            if cmd.unit == LaserUnit.Pixels:
+                if cmd.x: cmd.x *= pix2mm
+                if cmd.y: cmd.y *= pix2mm
+                if cmd.z: cmd.z *= pix2mm
+                cmd.unit = LaserUnit.Milimeters
+            # Flip y
+            if cmd.y: cmd.y = height_mm - cmd.y
+
     def apply(self, height, pix2mm):
         '''
         Goes over all commands, flips Y coordinate and converts pixels to mm
         This is done here, at the end, because all other libs have 0,0 in top left corner.
         '''
-        pass
+        self._apply(self.cmd_outline, height, pix2mm)
+        self._apply(self.cmd_infill, height, pix2mm)
 
     def __str__(self):
         all_commands = self.cmd_header + (self.cmd_infill * self.infill_passes) + (self.cmd_outline * self.outline_passes) + self.cmd_footer

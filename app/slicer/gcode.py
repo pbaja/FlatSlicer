@@ -191,6 +191,13 @@ class Gcode:
 
     def save(self, path:Path):
         if self.job is not None:
+            # Apply
+            height = self._img.info_height
+            pix2mm = 1 / self._img.info_mm2pix
+            self.job.apply(height, pix2mm)
+            log.info(f'Gcode applied, flipped y and converted pix2mm')
+
+            # Save to file
             with path.open('w+') as f:
                 f.write(str(self.job))
                 log.info(f'Saved Gcode to {path}')
