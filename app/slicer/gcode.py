@@ -38,16 +38,22 @@ def intersect(points, y):
         if x != -1: intersections.append(x)
     return intersections
 
-# def closest(nb.int32()):
-#     closest_dist = float_max
-#     closest_idx = 0
-#     for idx, line in enumerate(infill_lines):
-#         dist = sqdist(prev, line[0])
-#         if dist < closest_dist:
-#             closest_idx = idx
-#             closest_dist = dist
-#     return closest_idx
-
+@nb.njit(nb.int32(array2_float64, array1_float64, nb.float64))
+def closest(lines, prev, float_max):
+    lines_len = len(lines)
+    closest_dist = float_max
+    closest_idx = 0
+    for idx in range(0, lines_len, 2):
+        # Skip consumed
+        if lines[idx] is None:
+            continue
+        # Get distance
+        dist = sqdist(prev, lines[idx])
+        if dist < closest_dist:
+            closest_idx = idx
+            closest_dist = dist
+            if dist < 5: break # Good enough
+    return closest_idx
 
 class Gcode:
     '''
@@ -70,13 +76,18 @@ class Gcode:
         self.perf.tick('outline')
 
     def _generate_infill(self, config):
+        # No polygons?
+        if len(self._img.polygons) == 0:
+            log.error(f'No polygons')
+            return
+
         # Calculate bounding boxes
         polygons = self._img.polygons
         float_max = np.finfo(np.float64).max
         template = np.array([float_max, -float_max, float_max, -float_max]) # min_x, max_x, min_y, max_y
 
         global_bbox = template.copy()
-        polygon_bbox = np.zeros([len(polygons), 4], dtype=np.float64)
+        polygon_bbox = np.zeros((len(polygons), 4), dtype=np.float64)
         for i, polygon in enumerate(polygons):
             # Calculate polygon bounding box
             bbox = template.copy()
@@ -124,16 +135,24 @@ class Gcode:
 
         # Burn lines
         prev = np.zeros(1, dtype=np.float64)
-        while len(infill_lines) > 0:
+        infill_lines = np.array(infill_lines)
+        lines_left = len(infill_lines) // 2
+        while lines_left > 0:
 
             # Find closest
-            closest_dist = float_max
-            closest_idx = 0
-            for idx in range(0, len(infill_lines), 2):
-                dist = sqdist(prev, infill_lines[idx])
-                if dist < closest_dist:
-                    closest_idx = idx
-                    closest_dist = dist
+            closest_idx = closest(infill_lines, prev, float_max)
+
+            # closest_dist = float_max
+            # closest_idx = 0
+            # for idx in range(0, len(infill_lines), 2):
+            #     if infill_lines[idx] is None:
+            #         continue
+            #     dist = sqdist(prev, infill_lines[idx])
+            #     if dist < closest_dist:
+            #         closest_idx = idx
+            #         closest_dist = dist
+            #         if dist < 10:
+            #             break
             
             # Burn
             self.job.travel(infill_lines[closest_idx])
@@ -141,8 +160,9 @@ class Gcode:
             prev = infill_lines[closest_idx+1]
 
             # Remove
-            del infill_lines[closest_idx]
-            del infill_lines[closest_idx]
+            infill_lines[closest_idx] = None
+            #del infill_lines[closest_idx]
+            lines_left -= 1
             
         self.perf.tick('burn')
 

@@ -1,4 +1,5 @@
 import math, gc, random
+import logging as log
 import tkinter as tk
 import numpy as np
 from PIL import Image, ImageTk
@@ -223,6 +224,12 @@ class WorkspaceView(View):
         px, py = 0, 0
         offset = self.canvas.coords(self._anchor_id)
         points = [px * self._scale + offset[0], py * self._scale + offset[1]]
+
+        skip_coloring = False
+        if len(commands) > 40_000:
+            log.warn(f'Too many lines. Will skip workspace coloring to save performance.')
+            skip_coloring = True
+
         for gstr in commands:
             # Parse
             params = gstr.split()
@@ -236,14 +243,11 @@ class WorkspaceView(View):
                 for param in params[1:]:
                     if param[0] == 'X': tx = float(param[1:]) + 0.5
                     elif param[0] == 'Y': ty = float(param[1:]) + 0.5
-                # Skip first
-                if prev_cmd is not None:
-                    # Add point to list of points
-                    if cmd != prev_cmd:
-                        # Cmd changed, draw polygon
-                        self._add_polyline(points, prev_cmd, line_color, travel_color, width)
-                        points.clear()
-                        points += [px * self._scale + offset[0], py * self._scale + offset[1]]
+                # Draw polygon if skipped first and cmd changed
+                if not skip_coloring and prev_cmd is not None and cmd != prev_cmd:
+                    self._add_polyline(points, prev_cmd, line_color, travel_color, width)
+                    points.clear()
+                    points += [px * self._scale + offset[0], py * self._scale + offset[1]]
                 # Add current point
                 points += [tx * self._scale + offset[0], ty * self._scale + offset[1]]
                 prev_cmd = cmd
@@ -273,3 +277,4 @@ class WorkspaceView(View):
         self._draw_gcode(gcode.job.cmd_infill, CANVAS_LINE_INFILL, CANVAS_LINE_INFILL_TRAVEL, width=0.01)
         # Save calctime
         self._gcode_calctime = gcode.info_calctime
+        self._update_ui()

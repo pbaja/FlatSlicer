@@ -155,8 +155,10 @@ class RasterImage:
             # Open image
             img = Image.open(self.image_path)
             # Find bg color
-            rgb = img.convert('RGB')
-            bg = 'white' if sum(rgb.getpixel((0,0))) / 3 > 127 else 'black'
+            rgb = img.convert('RGBA')
+            pix = rgb.getpixel((0,0))
+            bg = 'black'
+            if pix[3] < 127 or sum(pix[:-1]) / 3 > 127: bg = 'white'
             # Replace transparency with color
             if img.mode == 'RGBA':
                 background = Image.new('RGBA', img.size, bg)

@@ -122,47 +122,35 @@ class LaserJob:
 
     def move(self, pos, rapid=False):
         '''Moves head to given x,y[,z] coordinates in mm'''
-        # Round
-        pos = [round(n, 3) for n in pos]
-        cmd = "G0 " if rapid else "G1 "
-        changed = False
-        # X
-        if self._pos[0] != pos[0]: 
-            cmd += f"X{pos[0] + self.offset[0]} "
-            self._pos[0] = pos[0]
-            changed = True
-        # Y
-        if self._pos[1] != pos[1]: 
-            cmd += f"Y{pos[1] + self.offset[1]} "
-            self._pos[1] = pos[1]
-            changed = True
-        # Z
-        if len(pos) > 2 and self._pos[2] != pos[2]: 
-            cmd += f"Z{pos[2] + self.offset[2]} "
-            self._pos[2] = pos[2]
-            changed = True
-        if changed:
-            self._append(cmd)
+
+        args = []
+        if abs(self._pos[0]-pos[0]) > 0.001: args.append(f"X{round(pos[0] + self.offset[0], 3)}")
+        if abs(self._pos[1]-pos[1]) > 0.001: args.append(f"Y{round(pos[1] + self.offset[1], 3)}")
+        if len(pos) > 2 and abs(self._pos[2]-pos[2]) > 0.001: args.append(f"Z{round(pos[2] + self.offset[2], 3)}")
+
+        if len(args) > 1:
+            args.insert(0, 'G0' if rapid else 'G1')
+            self._append(' '.join(args))
 
     def speed(self, speed:float):
         '''Changes movement speed. In mm/s'''
-        speed = round(float(speed) * 60, 3) # Convert mm/s to mm/min
-        if self._speed != speed:
-            self._append(f"G1 F{speed}")
+        if abs(self._speed-speed) > 0.001:
+            speed_mm_min = round(float(speed) * 60, 3)  # Convert mm/s to mm/min
+            self._append(f"G1 F{speed_mm_min}")
             self._speed = speed
 
     def power(self, power:float, sync=True):
         '''Sets laser power, range from 0.0 to 100.0'''
-        power = int(float(power)/100.0*255)
-        if self._power != power:
+        if abs(self._power-power) > 0.001:
+            power_256 = int(float(power)/100.0*255)
             if sync: self._append("M400")
-            self._append(self.on_command.replace("{power}", str(power)))
+            self._append(self.on_command.replace("{power}", str(power_256)))
             self._power = power
 
     def power_off(self):
         '''Powers off the laser'''
         self._append(self.off_command)
-        self._power = None
+        self._power = 0
 
     def wait(self, ms):
         '''Waits for given ms'''
