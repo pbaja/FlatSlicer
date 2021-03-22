@@ -162,7 +162,7 @@ class LaserJob:
     def power_off(self):
         '''Powers off the laser'''
         self._append(self.off_command)
-        self.power = None
+        self._power = None
 
     def wait(self, ms):
         '''Waits for given ms'''

@@ -4,9 +4,9 @@ class PerfTool:
 
     def __init__(self):
         self._timer = time.perf_counter()
-        self._history = []
+        self._history = {}
 
-    def tick(self, ):
+    def tick(self, tag=''):
         '''
         Returns time (in miliseconds, rounded to 2 places) elapsed since previous tick call
         '''
@@ -15,19 +15,17 @@ class PerfTool:
         result = round(elapsed*1000.0, 2)
 
         # Add to history
-        self._history.append(result)
-        while len(self._history) > 20:
-            del self._history[0]
+        self._history[tag] = result
 
         # Update timer
         self._timer = time.perf_counter()
         return result
 
-    def history(self, idx):
-        return self._history[idx]
+    def history(self, tag):
+        return self._history.get(tag, None)
 
     def total(self):
-        return round(sum(self._history), 2)
+        return round(sum(self._history.values()), 2)
 
     @staticmethod
     def decorate(func):

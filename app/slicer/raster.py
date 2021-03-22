@@ -111,7 +111,9 @@ def _travel(pixels, x, y) -> List:
         # Mark as visited
         pixels[y, x] = Pixel.Visited
 
-@nb.njit(_tuple64_array2(_pixels_array)) # parallel=True causes artifacts
+list_array2_float64 = nb.types.List(nb.types.Array(nb.float64, 2, 'C'))
+
+@nb.njit(list_array2_float64(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -121,8 +123,9 @@ def _trace_outline(pixels) -> List:
             p = pixels[y, x]
             if p == Pixel.Outline:
                 points = _travel(pixels, x, y)
+                points.append(points[0]) # CLOSE POLYGON
                 if len(points) > 2: # At least 3 vertices make polygons
-                    polygons.append(points)
+                    polygons.append(np.array(points, dtype=np.float64))
     return polygons
 
 class RasterImage:
@@ -151,15 +154,18 @@ class RasterImage:
         try:
             # Open image
             img = Image.open(self.image_path)
+            # Find bg color
+            rgb = img.convert('RGB')
+            bg = 'white' if sum(rgb.getpixel((0,0))) / 3 > 127 else 'black'
             # Replace transparency with color
             if img.mode == 'RGBA':
-                background = Image.new('RGBA', img.size, 'white')
+                background = Image.new('RGBA', img.size, bg)
                 background.paste(img, (0, 0), img)
                 img = background
             # Convert to grayscale
             img = img.convert('L')
             # Add 1pix border for simpler algorithms (iteration)
-            img = ImageOps.expand(img, border=10, fill='white')
+            img = ImageOps.expand(img, border=10, fill=bg)
             # Convert to array
             self.pixels = np.asarray(img).copy()
             # Make it binary
@@ -183,18 +189,11 @@ class RasterImage:
         # Extract outline pixels
         perf.tick()
         self.pixels = _extract_outline(self.pixels)
-        perf.tick()
+        perf.tick('convert')
 
         # Trace outline
         self.polygons = _trace_outline(self.pixels)
-        perf.tick()
-
-        # Simplify
-        total_lines_before = sum([len(p) for p in self.polygons])
-        epsilon = config.get_value('import.epsilon')
-        if epsilon > 0:
-            self.polygons = rdp_simplify_all(self.polygons, epsilon)
-        perf.tick()
+        perf.tick('trace')
 
         # Done
         self.traced = True
@@ -206,11 +205,10 @@ class RasterImage:
 
         log.info(\
             f'Image {self.image_path.name},'\
-            f' convert: {perf.history(-3)} ms,'\
-            f' trace: {perf.history(-2)} ms,'\
-            f' simplify: {perf.history(-1)} ms,'\
+            f' convert: {perf.history("convert")} ms,'\
+            f' trace: {perf.history("trace")} ms,'\
             f' {self.info_numpolygons} polygons,'\
-            f' {self.info_numlines} (+{total_lines_before-self.info_numlines}) lines')
+            f' {self.info_numlines} lines')
 
     def render(self) -> None:
         '''

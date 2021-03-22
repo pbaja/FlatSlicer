@@ -24,6 +24,7 @@ class WorkspaceView(View):
         self._tkimg = None
         self._line_ids = []
         self._motion_pos = None
+        self._gcode_calctime = None
 
     def init(self):
         '''
@@ -80,6 +81,8 @@ class WorkspaceView(View):
             size = size[0]/ppmm, size[1]/ppmm
             img = self._raster_img
             info = f'{size[0]}mm x {size[1]}mm, {img.info_numlines} lines, {img.info_numpolygons} polygons, {mpix} Mpix in {img.info_calctime} ms'
+            if self._gcode_calctime is not None:
+                info += f', gcode: {self._gcode_calctime} ms'
             self.canvas.itemconfig(self._ui_ids[4], text=info)
             x = self.canvas.canvasx(self.canvas.winfo_width()-10)
             self.canvas.coords(self._ui_ids[4], x, y-10)
@@ -97,14 +100,15 @@ class WorkspaceView(View):
         if event.num == 5 or event.delta == -120: self._scale /= 1.25
         if event.num == 4 or event.delta == 120: self._scale *= 1.25
         # Clamp scale
-        if self._scale > 10.0: self._scale = 10.0
+        if self._scale > 15.0: self._scale = 15.0
         if self._scale < 0.1: self._scale = 0.1
         scale = self._scale / prev_scale
         # Rescale all canvas objects
         mouse_x, mouse_y = self.canvas.canvasx(event.x), self.canvas.canvasy(event.y)
         self.canvas.scale('all', mouse_x, mouse_y, scale, scale)
         for line_id in self._line_ids:
-            self.canvas.itemconfig(line_id[0], width=math.ceil(line_id[1] * self._scale))
+            width = int(line_id[1] * self._scale)
+            self.canvas.itemconfig(line_id[0], width=max(width, 1))
         # Scale image
         if self._tkimg is not None:
             self._scale_image()
@@ -214,23 +218,12 @@ class WorkspaceView(View):
             line_id = self.canvas.create_line(*flat_points, fill=colors[i%len(colors)], width=int(self._scale))
             self._line_ids.append((line_id, int(self._scale)))
 
-    def _add_polyline(self, points, cmd):
-        fill = CANVAS_LINE_OUTLINE if cmd == 'G1' else CANVAS_LINE_TRAVEL
-        width = 1.0 if cmd == 'G1' else 0.5
-        line_id = self.canvas.create_line(*points, fill=fill, width=width)
-        self._line_ids.append((line_id, width))
-
-    def show_gcode(self, gcode:Gcode):
-
-        # Remove previous lines
-        self._clear_lines()
-        offset = self.canvas.coords(self._anchor_id)
-
-        # Draw outline lines
-        prev_cmd = 'G0'
+    def _draw_gcode(self, commands, line_color, travel_color, width=1.0):
+        prev_cmd = None
         px, py = 0, 0
+        offset = self.canvas.coords(self._anchor_id)
         points = [px * self._scale + offset[0], py * self._scale + offset[1]]
-        for gstr in gcode.job.cmd_outline:
+        for gstr in commands:
             # Parse
             params = gstr.split()
             if len(params) == 0: continue
@@ -241,22 +234,42 @@ class WorkspaceView(View):
                 # Target x, y
                 tx, ty = px, py
                 for param in params[1:]:
-                    if param[0] == 'X': tx = float(param[1:])
-                    elif param[0] == 'Y': ty = float(param[1:])
-                # Add point to list of points
-                if cmd != prev_cmd:
-                    # Cmd changed, draw polygon
-                    self._add_polyline(points, prev_cmd)
-                    points.clear()
-                    points += [px * self._scale + offset[0], py * self._scale + offset[1]]
+                    if param[0] == 'X': tx = float(param[1:]) + 0.5
+                    elif param[0] == 'Y': ty = float(param[1:]) + 0.5
+                # Skip first
+                if prev_cmd is not None:
+                    # Add point to list of points
+                    if cmd != prev_cmd:
+                        # Cmd changed, draw polygon
+                        self._add_polyline(points, prev_cmd, line_color, travel_color, width)
+                        points.clear()
+                        points += [px * self._scale + offset[0], py * self._scale + offset[1]]
+                # Add current point
                 points += [tx * self._scale + offset[0], ty * self._scale + offset[1]]
-                # Save prev values
                 prev_cmd = cmd
                 px, py = tx, ty
         if len(points) >= 4:
-            self._add_polyline(points, prev_cmd)
-        
+            self._add_polyline(points, prev_cmd, line_color, travel_color, width)
 
+    def _add_polyline(self, points, cmd, line_color, travel_color, width):
+        # Properties
+        fill = line_color if cmd == 'G1' else travel_color
+        if cmd == 'G0': width *= 0.5
+        # Arrow
+        arrow = tk.NONE
+        if len(points) == 4:
+            sqlen = (points[2]-points[0])**2 + (points[3]-points[1])**2
+            if sqlen > 10 ** 2: arrow = tk.LAST
+        # Add line
+        line_id = self.canvas.create_line(*points, fill=fill, arrow=arrow, width=int(width*self._scale))
+        self._line_ids.append((line_id, width))
 
-
-                
+    def show_gcode(self, gcode:Gcode):
+        # Remove previous lines
+        self._clear_lines() 
+        # Draw outline lines
+        self._draw_gcode(gcode.job.cmd_outline, CANVAS_LINE_OUTLINE, CANVAS_LINE_OUTLINE_TRAVEL)
+        # Draw infill lines
+        self._draw_gcode(gcode.job.cmd_infill, CANVAS_LINE_INFILL, CANVAS_LINE_INFILL_TRAVEL, width=0.01)
+        # Save calctime
+        self._gcode_calctime = gcode.info_calctime
