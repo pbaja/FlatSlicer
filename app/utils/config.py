@@ -17,6 +17,9 @@ default_data = {
         'min_power': 1.0,
         'offset': {'x': 0, 'y': 0, 'z': 20.0},
         'travel_speed': 100.0,
+        'min_travel': 0.5,
+        'travel_accel': 2000.0,
+        'burn_accel': 5000.0,
     },
     'outline': {
         'passes': 1,

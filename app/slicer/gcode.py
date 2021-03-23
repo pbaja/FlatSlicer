@@ -134,30 +134,27 @@ class Gcode:
         self.perf.tick('infill')
 
         # Burn lines
-        prev = np.zeros(1, dtype=np.float64)
+        min_travel = pow(self._img.info_mm2pix * config.get_value('machine.min_travel'), 2)
+        prev_a = np.zeros(1, dtype=np.float64)
+        prev_b = np.zeros(1, dtype=np.float64)
         infill_lines = np.array(infill_lines)
         lines_left = len(infill_lines) // 2
         while lines_left > 0:
 
             # Find closest
-            closest_idx = closest(infill_lines, prev, float_max, self._img.info_mm2pix * 0.1)
-
-            # closest_dist = float_max
-            # closest_idx = 0
-            # for idx in range(0, len(infill_lines), 2):
-            #     if infill_lines[idx] is None:
-            #         continue
-            #     dist = sqdist(prev, infill_lines[idx])
-            #     if dist < closest_dist:
-            #         closest_idx = idx
-            #         closest_dist = dist
-            #         if dist < 10:
-            #             break
+            closest_idx = closest(infill_lines, prev_b, float_max, self._img.info_mm2pix * 0.1)
             
+            # Get points
+            a = infill_lines[closest_idx]
+            b = infill_lines[closest_idx+1]
+
             # Burn
-            self.job.travel(infill_lines[closest_idx])
-            self.job.burn(infill_lines[closest_idx+1])
-            prev = infill_lines[closest_idx+1]
+            dist = sqdist(prev_b, a)
+            if dist > min_travel: self.job.travel(a) 
+            else: self.job.burn(a)
+            
+            self.job.burn(b)
+            prev_b = b
 
             # Remove
             infill_lines[closest_idx] = None

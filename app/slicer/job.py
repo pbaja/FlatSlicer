@@ -33,6 +33,12 @@ class LaserMove(LaserCmd):
         args.insert(0, 'G0' if self.rapid else 'G1')
         return ' '.join(args)
 
+class LaserAccel(LaserCmd):
+    def __init__(self, accel):
+        self.accel = accel
+    def __str__(self):
+        return f'M204 P{self.accel} T{self.accel}'
+
 class LaserRaw(LaserCmd):
     def __init__(self, code):
         self.code = code
@@ -47,6 +53,9 @@ class LaserJob:
         self.off_command = config.get_value('machine.laser_off')
         self.travel_speed = config.get_value('machine.travel_speed')
         self.offset = [config.get_value('machine.offset.x'), config.get_value('machine.offset.y'), config.get_value('machine.offset.z')]
+
+        self.travel_accel = config.get_value('machine.travel_accel')
+        self.burn_accel = config.get_value('machine.burn_accel')
 
         self.outline_power = config.get_value('outline.power')
         self.outline_speed = config.get_value('outline.speed')
@@ -65,6 +74,7 @@ class LaserJob:
         # Current state
         self._power = 0
         self._speed = 0
+        self._accel = 0
         self._pos = [-1, -1, -1]
 
     def _apply(self, commands, height_mm, pix2mm):
@@ -114,8 +124,8 @@ class LaserJob:
         self.gcode("G21") # Use metric system
         self.gcode("G90") # Use absolute positioning (G21->relative)
         self.gcode("M18 S10") # Disable steppers after 10s of inactivity
-        self.gcode("M201 X5000.00 Y5000.00") # Set max acceleration. Default is 5000mm/s^2, Prusa uses 9000mm/s^2 for travel
-        self.gcode("M204 T5000.00") # Set print acceleration. Default is 5000mm/s^2
+        max_accel = max(self.burn_accel, self.travel_accel)
+        self.gcode(f'M201 X{max_accel} Y{max_accel}') # Set max acceleration. Default is 5000mm/s^2, Prusa uses 9000mm/s^2 for travel
 
     def begin_outline(self):
         self.cmd_target = LaserJobTarget.Outline
@@ -141,6 +151,7 @@ class LaserJob:
         '''
         Turns off laser, changes speed to travelling speed, moves to target
         '''
+        self.accel(self.travel_accel)
         self.power(self.min_power)
         self.speed(self.travel_speed)
         self.move(target, rapid=True)
@@ -159,6 +170,7 @@ class LaserJob:
         elif self.cmd_target == LaserJobTarget.Infill: power = self.infill_power
         else: raise Exception(f'Unknown power for {self.cmd_target}')
 
+        self.accel(self.burn_accel)
         self.speed(speed)
         self.power(power)
         self.move(target)
@@ -215,6 +227,11 @@ class LaserJob:
             if sync: self._append(LaserRaw("M400"))
             self._append(LaserRaw(self.on_command.replace("{power}", str(power_256))))
             self._power = power
+
+    def accel(self, accel:float):
+        if abs(self._accel-accel) > 0.001:
+            self._append(LaserAccel(accel))
+            self._accel = accel
 
     def power_off(self):
         '''Powers off the laser'''
