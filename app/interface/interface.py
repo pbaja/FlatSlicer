@@ -1,8 +1,9 @@
 import logging as log
 from pathlib import Path
+from tkinter import messagebox
 
 from slicer import Slicer, Gcode, RasterImage
-from utils import Event, Config
+from utils import Event, Config, Octoprint
 from .window import Window
 
 
@@ -86,8 +87,25 @@ class Interface:
         img = self.slicer.get_image(file_path=path, load=True)
         if img is None: return
         if not img.traced: self._trace_file(path)
-        # Save if generated
+
+        # Make sure image gcode has been generated
         if img.gcode is None:
+            messagebox.showwarning('No Gcode found', 'Generate Gcode first by pressing "Generate Gcode".')
             log.warn('Tried to save gcode, but no gcode has been generated')
             return
-        img.gcode.save(gcode_path)
+
+        # Generate output
+        output = img.gcode.get_output()
+        if output is None:
+            log.error('Failed to generate Gcode')
+            return
+
+        # Save to file
+        with gcode_path.open('w+') as f:
+            f.write(output)
+            log.info(f'Saved Gcode to {path}')
+
+        # Upload to octoprint
+        if len(self.config.get_value('octoprint.url')) > 0:
+            octo = Octoprint(self.config)
+            octo.upload(gcode_path.name, output)

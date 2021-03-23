@@ -82,8 +82,8 @@ class LaserJob:
             # Only move commands
             if not isinstance(cmd, LaserMove): continue
             # Skip already processed
-            # if cmd.applied: continue
-            # cmd.applied = True
+            if cmd.applied: continue
+            cmd.applied = True
             # Convert pixels to mm
             if cmd.unit == LaserUnit.Pixels:
                 if cmd.x is not None: cmd.x *= pix2mm
@@ -126,6 +126,7 @@ class LaserJob:
         self.gcode("M18 S10") # Disable steppers after 10s of inactivity
         max_accel = max(self.burn_accel, self.travel_accel)
         self.gcode(f'M201 X{max_accel} Y{max_accel}') # Set max acceleration. Default is 5000mm/s^2, Prusa uses 9000mm/s^2 for travel
+        self.comment('LAYER:0') # Compatibility with some octoprint plugins
 
     def begin_outline(self):
         self.cmd_target = LaserJobTarget.Outline

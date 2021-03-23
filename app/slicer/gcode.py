@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .job import LaserJob, LaserUnit
 from .raster import RasterImage
-from utils import PerfTool
+from utils import PerfTool, Octoprint
 
 array1_float64 = nb.types.Array(nb.float64, 1, 'C')
 array2_float64 = nb.types.Array(nb.float64, 2, 'C')
@@ -62,6 +62,7 @@ class Gcode:
     def __init__(self, img:RasterImage):
         self._img = img
         self.job = None
+        self.output = None
         self.info_calctime = None
 
     def _generate_outline(self, config):
@@ -186,7 +187,7 @@ class Gcode:
         self.info_calctime = self.perf.total()
         log.info(f'Gcode for {self._img.image_path.name}, ' + ', '.join(f'{param}: {self.perf.history(param)} ms' for param in ['outline', 'bbox', 'infill', 'burn']))
 
-    def save(self, path:Path):
+    def get_output(self):
         if self.job is not None:
             # Apply
             height = self._img.info_height
@@ -194,8 +195,6 @@ class Gcode:
             self.job.apply(height, pix2mm)
             log.info(f'Gcode applied, flipped y and converted pix2mm')
 
-            # Save to file
-            with path.open('w+') as f:
-                f.write(str(self.job))
-                log.info(f'Saved Gcode to {path}')
-            return True
+            # Generate output
+            return str(self.job)
+        return None

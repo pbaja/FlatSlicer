@@ -11,6 +11,10 @@ default_data = {
         'dpi': 508,
         'epsilon': 0.5
     },
+    'octoprint': {
+        'url': '',
+        'key': ''
+    },
     'machine': {
         'laser_on': 'M106 P1 S{power}',
         'laser_off': 'M107 P1',

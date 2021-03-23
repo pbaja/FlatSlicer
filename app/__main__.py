@@ -23,6 +23,8 @@ if __name__ == '__main__':
     log.getLogger('numba.core.byteflow').setLevel(log.WARN)
     log.getLogger('numba.core.typeinfer').setLevel(log.WARN)
     log.getLogger('PIL.PngImagePlugin').setLevel(log.WARN)
+    log.getLogger('PIL.Image').setLevel(log.WARN)
+    log.getLogger('urllib3.connectionpool').setLevel(log.WARN)
     log.basicConfig(level=log.DEBUG, format='[%(levelname)s] %(message)s')
     log.info(f'Starting FlatSlicer v{VERSION_STR}')
 

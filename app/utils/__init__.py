@@ -7,3 +7,4 @@ from .events import Event
 from .config import Config
 from .perf import PerfTool
 from .rdp import rdp_simplify, rdp_simplify_all
+from .octoprint import Octoprint
