@@ -20,3 +20,18 @@ For now you can run it directly from the source:
   
 ## Documentation  
 The project is at a very early stage, the GUI and functionality is constantly changing. Documentation will appear on the Wiki page after the project will be more or less in beta not in alpha state.  
+  
+## Roadmap  
+Features to add before the project would be considered "stable beta".  
+ - [ ] Improve workspace performance by switching to external rendering lib (Cairo?)
+ - [ ] Importing vector images (svg, dxf?) by converting them to raster images on the fly (CairoSVG?)
+ - [ ] Add min-width option to better support thin lines
+ - [ ] Add tests
+ - [ ] Build binaries with pyinstaller
+ - [ ] Add padding option to infill
+ - [ ] Add line angle option to infill
+ - [ ] Add border option (inset, outset) to outline
+ - [ ] Add value checks to prevent accidential breaks
+ - [ ] Add raster feature to support engraving raster (grayscale) images
+ - [ ] Machine tab, with settings saved separately from project config
+ - [ ] In app uploading Gcode to OctoPrint
