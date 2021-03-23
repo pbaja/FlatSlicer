@@ -64,15 +64,19 @@ class Window:
         '''
         # Init fonts
         _load_fonts()
+
         # Setup root
         self._root = tk.Tk()
         self._root.tk_setPalette(background=COLOR_BG0, foreground=COLOR_FG0, activeBackground=COLOR_BG0, activeForeground=COLOR_FG0)
         self._root.title(WINDOW_TITLE)
         self._root.minsize(*WINDOW_SIZE)
         self._root.protocol("WM_DELETE_WINDOW", self.close_pressed)
+        self._root.iconphoto("False", tk.PhotoImage(file=str(Path(sys.path[0]).parent / 'img' / 'icon.png')))
+
         # Apply style
         style = AppStyle(self._root)
         style.apply()
+
         # Setup window
         window = tk.PanedWindow(self._root)
         window.pack(fill=tk.BOTH, expand=1)
