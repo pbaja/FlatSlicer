@@ -43,20 +43,18 @@ class LaserRaw(LaserCmd):
 class LaserJob:
     def __init__(self, config):
         # Config
-        self.min_power = config.get_value('global.min_power')
-        self.on_command = config.get_value('global.laser_on')
-        self.off_command = config.get_value('global.laser_off')
-        self.travel_speed = config.get_value('global.travel_speed')
-        self.offset = [config.get_value('global.offset.x'), config.get_value('global.offset.y'), config.get_value('global.offset.z')]
-        self.min_travel_sq = config.get_value('global.min_travel_distance') ** 2
+        self.min_power = config.get_value('machine.min_power')
+        self.on_command = config.get_value('machine.laser_on')
+        self.off_command = config.get_value('machine.laser_off')
+        self.travel_speed = config.get_value('machine.travel_speed')
+        self.offset = [config.get_value('machine.offset.x'), config.get_value('machine.offset.y'), config.get_value('machine.offset.z')]
 
         self.outline_power = config.get_value('outline.power')
         self.outline_speed = config.get_value('outline.speed')
+        self.outline_passes = config.get_value('outline.passes')
         self.infill_power = config.get_value('infill.power')
         self.infill_speed = config.get_value('infill.speed')
-
         self.infill_passes = config.get_value('infill.passes')
-        self.outline_passes = config.get_value('outline.passes')
 
         # Commands
         self.cmd_target = None

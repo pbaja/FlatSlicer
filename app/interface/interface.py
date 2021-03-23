@@ -54,12 +54,13 @@ class Interface:
         self.window.dump_config(self.config)
         self.window.close()
 
-    def _trace_file(self, path:Path=None) -> RasterImage:
+    def _trace_file(self, path:Path=None) -> None:
         '''
         Trace button on sidebar pressed, get or load file, trace it and display on workspace
         '''
         # Get image
         img = self.slicer.get_image(file_path=path, load=True)
+        if img is None: return
         # Trace
         self.window.dump_config(self.config)
         img.trace(self.config)
@@ -70,6 +71,7 @@ class Interface:
     def _genereate_file(self, path:Path) -> None:
         # Get image
         img = self.slicer.get_image(file_path=path, load=True)
+        if img is None: return
         if not img.traced: self._trace_file(path)
         # Generate
         self.window.dump_config(self.config)
@@ -82,6 +84,7 @@ class Interface:
     def _export_file(self, path:Path, gcode_path:Path) -> None:
         # Get image
         img = self.slicer.get_image(file_path=path, load=True)
+        if img is None: return
         if not img.traced: self._trace_file(path)
         # Save if generated
         if img.gcode is None:

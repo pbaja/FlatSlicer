@@ -31,6 +31,7 @@ class Slicer:
 
     def get_image(self, file_path:Path, load:bool=False) -> RasterImage:
         # Get image from array
+        if file_path is None: return None
         str_path = str(file_path.resolve())
         img = self._images.get(str_path, None)
         if img is not None: return img

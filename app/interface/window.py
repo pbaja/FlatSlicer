@@ -113,6 +113,9 @@ class Window:
         selection = selection[0] if len(selection) > 0 else self._last_selection
         self._last_selection = selection
         path_str = listbox.get(selection)
+        if not len(path_str):
+            messagebox.showwarning('No file selected', 'No files has been selected. Select file first.')
+            return None
         return Path(path_str)
 
     def _trace_pressed(self) -> None:

@@ -25,17 +25,14 @@ class SidebarView(View):
 
         widget = SidebarWidget(self.frame, 'Import')
         widget.add_entry('Image DPI', 'import.dpi:float')
-        #widget.add_entry('Epsilon [mm]', 'import.epsilon:float')
         self.items.update(widget.items)
 
-        widget = SidebarWidget(self.frame, 'Global')
-        widget.add_entry('Laser ON', 'global.laser_on')
-        widget.add_entry('Laser OFF', 'global.laser_off')
-        widget.add_entry('Min Power [%]', 'global.min_power:float', validate=self.validate_float)
-        widget.add_entries('Offset [mm]', ['X', 'Y', 'Z'], ['global.offset.x:float', 'global.offset.y:float', 'global.offset.z:float'])
-        widget.add_entry('Travel Speed [mm/s]', 'global.travel_speed:float', validate=self.validate_float)
-        widget.add_entry('Bezier Resolution [mm]', 'global.bezier_resolution:float', validate=self.validate_float)
-        widget.add_entry('Min Travel Distance [mm]', 'global.min_travel_distance:float', validate=self.validate_float)
+        widget = SidebarWidget(self.frame, 'Machine')
+        widget.add_entry('Laser ON', 'machine.laser_on')
+        widget.add_entry('Laser OFF', 'machine.laser_off')
+        widget.add_entry('Min Power [%]', 'machine.min_power:float', validate=self.validate_float)
+        widget.add_entries('Offset [mm]', ['X', 'Y', 'Z'], ['machine.offset.x:float', 'machine.offset.y:float', 'machine.offset.z:float'])
+        widget.add_entry('Travel Speed [mm/s]', 'machine.travel_speed:float', validate=self.validate_float)
         self.items.update(widget.items)
 
         widget = SidebarWidget(self.frame, 'Outline')
@@ -52,7 +49,7 @@ class SidebarView(View):
         self.items.update(widget.items)
 
         buttons = SidebarButtons(self.frame, 'Output', 3)
-        buttons.add_button('Trace bitmap', callback=self.trace_pressed)
+        buttons.add_button('Trace image', callback=self.trace_pressed)
         buttons.add_button('Generate Gcode', callback=self.generate_pressed)
         buttons.add_button('Export Gcode', callback=self.export_pressed)
 
