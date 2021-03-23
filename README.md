@@ -1,5 +1,4 @@
-<p align="center"><img align="center" src="img/icon.png" alt="FlatSlicer's logo"></p>
-<h1 align="center">FlatSlicer</h1>
+<p align="center"><img align="center" src="img/icon.png" width="25%" alt="FlatSlicer's logo"></p>
 
 ## Description  
 FlatSlicer is a tool that generates Gcode from raster images (png, jpeg, etc.) for lasers. It will extract and trace polygons from image and then generate outline/infill in an optimized way.  
