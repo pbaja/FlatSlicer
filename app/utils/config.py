@@ -103,5 +103,5 @@ class Config:
     def load(self):
         if self.path.is_file():
             with self.path.open('r') as f:
-                self.data = self._inflate(json.load(f))
+                self.data = self._flatten(json.load(f))
                 log.info('Loaded config from file')

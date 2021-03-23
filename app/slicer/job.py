@@ -23,14 +23,13 @@ class LaserMove(LaserCmd):
         self.unit = unit
         self.applied = False
     def valid(self):
-        return self.x or self.y or self.z
+        return (self.x is not None) or (self.y is not None) or (self.z is not None)
     def __str__(self):
-        if not self.valid():
-            return ''
+        if not self.valid(): return ''
         args = []
-        if self.x: args.append(f"X{self.x}")
-        if self.y: args.append(f"Y{self.y}")
-        if self.z: args.append(f"Z{self.z}")
+        if self.x is not None: args.append(f"X{round(self.x,3)}")
+        if self.y is not None: args.append(f"Y{round(self.y,3)}")
+        if self.z is not None: args.append(f"Z{round(self.z,3)}")
         args.insert(0, 'G0' if self.rapid else 'G1')
         return ' '.join(args)
 
@@ -73,24 +72,30 @@ class LaserJob:
             # Only move commands
             if not isinstance(cmd, LaserMove): continue
             # Skip already processed
-            if cmd.applied: continue
-            cmd.applied = True
+            # if cmd.applied: continue
+            # cmd.applied = True
             # Convert pixels to mm
             if cmd.unit == LaserUnit.Pixels:
-                if cmd.x: cmd.x *= pix2mm
-                if cmd.y: cmd.y *= pix2mm
-                if cmd.z: cmd.z *= pix2mm
+                if cmd.x is not None: cmd.x *= pix2mm
+                if cmd.y is not None: cmd.y *= pix2mm
+                if cmd.z is not None: cmd.z *= pix2mm
                 cmd.unit = LaserUnit.Milimeters
-            # Flip y
-            if cmd.y: cmd.y = height_mm - cmd.y
+                # Flip y
+                if cmd.y is not None: cmd.y = height_mm - cmd.y
+            # Add offset
+            if cmd.x is not None: cmd.x += self.offset[0]
+            if cmd.y is not None: cmd.y += self.offset[1]
+            if cmd.z is not None: cmd.z += self.offset[2]
 
     def apply(self, height, pix2mm):
         '''
         Goes over all commands, flips Y coordinate and converts pixels to mm
         This is done here, at the end, because all other libs have 0,0 in top left corner.
         '''
+        self._apply(self.cmd_header, height, pix2mm)
         self._apply(self.cmd_outline, height, pix2mm)
         self._apply(self.cmd_infill, height, pix2mm)
+        self._apply(self.cmd_footer, height, pix2mm)
 
     def __str__(self):
         all_commands = self.cmd_header + (self.cmd_infill * self.infill_passes) + (self.cmd_outline * self.outline_passes) + self.cmd_footer
@@ -109,17 +114,17 @@ class LaserJob:
         self.gcode("G21") # Use metric system
         self.gcode("G90") # Use absolute positioning (G21->relative)
         self.gcode("M18 S10") # Disable steppers after 10s of inactivity
-        self.gcode("M201 X5000.00 Y5000.00") # Set max acceleration. Default is 500mm/s^2, Prusa uses 9000mm/s^2 for travel
-        self.gcode("M204 T5000.00") # Set print acceleration. Default is 500mm/s^2
-        self.comment('')
-        self.comment('Content')
+        self.gcode("M201 X5000.00 Y5000.00") # Set max acceleration. Default is 5000mm/s^2, Prusa uses 9000mm/s^2 for travel
+        self.gcode("M204 T5000.00") # Set print acceleration. Default is 5000mm/s^2
 
     def begin_outline(self):
         self.cmd_target = LaserJobTarget.Outline
+        self.comment('')
         self.comment('Outline pass')
 
     def begin_infill(self):
         self.cmd_target = LaserJobTarget.Infill
+        self.comment('')
         self.comment('Infill pass')
 
     def end(self):
@@ -179,13 +184,19 @@ class LaserJob:
         '''Adds raw gcode to the list of commands'''
         self._append(LaserRaw(command))
 
-    def move(self, pos, unit=LaserUnit.Pixels, rapid=False):
+    def move(self, pos, unit=LaserUnit.Pixels, rapid=False, force=False):
         '''Moves head to given x,y[,z] coordinates in mm'''
 
         x, y, z = None, None, None
-        if abs(self._pos[0]-pos[0]) > 0.001: x = round(pos[0] + self.offset[0], 3)
-        if abs(self._pos[1]-pos[1]) > 0.001: y = round(pos[1] + self.offset[1], 3)
-        if len(pos) > 2 and abs(self._pos[2]-pos[2]) > 0.001: z = round(pos[2] + self.offset[2], 3)
+        if abs(self._pos[0]-pos[0]) > 0.001: 
+            x = pos[0]
+            self._pos[0] = pos[0]
+        if abs(self._pos[1]-pos[1]) > 0.001: 
+            y = pos[1]
+            self._pos[1] = pos[1]
+        if len(pos) > 2 and abs(self._pos[2]-pos[2]) > 0.001: 
+            z = pos[2]
+            self._pos[2] = pos[2]
 
         m = LaserMove(x, y, z, unit=unit, rapid=rapid)
         if m is not None: self._append(m)
