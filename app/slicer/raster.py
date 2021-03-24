@@ -16,11 +16,7 @@ class Pixel(IntEnum):
     Outline = 2
     Visited = 3
 
-_pixels_array = nb.types.Array(nb.uint8, 2, 'C')
-_tuple64_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
-_tuple64_array2 = nb.types.List(_tuple64_array)
-
-@nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
+@nb.njit(nb.int32(bytearray2d_t, int_t, int_t))
 def _neighbours_sum(a, x, y) -> int:
     n1 = a[x-1, y+1] == Pixel.Black
     n2 = a[x  , y+1] == Pixel.Black
@@ -32,7 +28,7 @@ def _neighbours_sum(a, x, y) -> int:
     n8 = a[x-1, y  ] == Pixel.Black
     return n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8
 
-@nb.njit(_pixels_array(_pixels_array), parallel=True)
+@nb.njit(bytearray2d_t(bytearray2d_t), parallel=True)
 def _extract_outline(pixels) -> np.ndarray:
     w, h = pixels.shape
     for y in nb.prange(1, h-1):
@@ -44,7 +40,7 @@ def _extract_outline(pixels) -> np.ndarray:
                 pixels[x, y] = Pixel.Outline
     return pixels
 
-@nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
+@nb.njit(nb.int32(bytearray2d_t, int_t, int_t))
 def _direction(pixels, x, y):
     if pixels[y, x-1] == Pixel.Outline: return 1
     elif pixels[y, x+1] == Pixel.Outline: return 2
@@ -56,7 +52,7 @@ def _direction(pixels, x, y):
     elif pixels[y+1, x+1] == Pixel.Outline: return 8
     return 0
 
-@nb.njit(array2d_t(_pixels_array, nb.int32, nb.int32), fastmath=True)
+@nb.njit(array2d_t(bytearray2d_t, int_t, int_t), fastmath=True)
 def _travel(pixels, x, y) -> List:
     pixels[y, x] = Pixel.Visited
     result = []
@@ -115,9 +111,7 @@ def _travel(pixels, x, y) -> List:
         # Mark as visited
         pixels[y, x] = Pixel.Visited
 
-list_array2_float64 = nb.types.List(nb.types.Array(nb.int32, 2, 'C'))
-
-@nb.njit(list_t(array2d_t)(_pixels_array)) # parallel=True causes artifacts
+@nb.njit(list_t(array2d_t)(bytearray2d_t)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []

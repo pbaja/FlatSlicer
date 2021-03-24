@@ -4,11 +4,13 @@ import numba as nb
 # Types
 float_t = nb.float64
 int_t = nb.int32
+byte_t = nb.uint8
 array_t = nb.types.Array
 list_t = nb.types.List
 
 array1d_t = array_t(int_t, 1, 'C')
 array2d_t = array_t(int_t, 2, 'C')
+bytearray2d_t = array_t(byte_t, 2, 'C')
 
 # Functions
 @nb.njit(array1d_t(int_t, int_t))
