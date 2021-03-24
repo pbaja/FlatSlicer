@@ -8,6 +8,7 @@ from enum import IntEnum
 from PIL import Image, ImageOps
 
 from utils import Config, PerfTool, rdp_simplify_all
+from utils.math import *
 
 class Pixel(IntEnum):
     Black = 0
@@ -55,7 +56,7 @@ def _direction(pixels, x, y):
     elif pixels[y+1, x+1] == Pixel.Outline: return 8
     return 0
 
-@nb.njit(_tuple64_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
+@nb.njit(array2d_t(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
     pixels[y, x] = Pixel.Visited
     result = []
@@ -64,17 +65,17 @@ def _travel(pixels, x, y) -> List:
     prev_dir = 0
     prev2_dir = 0
 
-    deltas = [
-        (99, 99), # INVALID
-        (-1,  0), # Left
-        ( 1,  0), # Right
-        ( 0, -1), # Up
-        ( 0,  1), # Down
-        (-1, -1), # Left-Up
-        ( 1, -1), # Right-Up
-        (-1,  1), # Left-Down
-        ( 1,  1), # Right-Down
-    ]
+    deltas = np.array([
+        [99, 99], # INVALID
+        [-1,  0], # Left
+        [ 1,  0], # Right
+        [ 0, -1], # Up
+        [ 0,  1], # Down
+        [-1, -1], # Left-Up
+        [ 1, -1], # Right-Up
+        [-1,  1], # Left-Down
+        [ 1,  1], # Right-Down
+    ], dtype=int_t)
 
     while True:
         # Get next pixel direction
@@ -83,7 +84,10 @@ def _travel(pixels, x, y) -> List:
         if curr_dir == 0:
             # No more pixels to travel
             if reverse:
-                return result
+                # Close polygon if dist(end,start) < 4 pixels
+                if sqdist(np.array(result[-1], dtype=int_t), np.array(result[0], dtype=int_t)) < 4:
+                    result.append(result[0])
+                return np.array(result, dtype=int_t)
             # Get back to starting point and check if the line goes to the other direction
             else:
                 result.append((x, y)) # Add final point
@@ -111,9 +115,9 @@ def _travel(pixels, x, y) -> List:
         # Mark as visited
         pixels[y, x] = Pixel.Visited
 
-list_array2_float64 = nb.types.List(nb.types.Array(nb.float64, 2, 'C'))
+list_array2_float64 = nb.types.List(nb.types.Array(nb.int32, 2, 'C'))
 
-@nb.njit(list_array2_float64(_pixels_array)) # parallel=True causes artifacts
+@nb.njit(list_t(array2d_t)(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -123,9 +127,8 @@ def _trace_outline(pixels) -> List:
             p = pixels[y, x]
             if p == Pixel.Outline:
                 points = _travel(pixels, x, y)
-                points.append(points[0]) # CLOSE POLYGON
                 if len(points) > 2: # At least 3 vertices make polygons
-                    polygons.append(np.array(points, dtype=np.float64))
+                    polygons.append(points)
     return polygons
 
 class RasterImage:

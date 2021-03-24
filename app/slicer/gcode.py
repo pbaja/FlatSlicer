@@ -6,13 +6,10 @@ from pathlib import Path
 from .job import LaserJob, LaserUnit
 from .raster import RasterImage
 from utils import PerfTool, Octoprint
+from utils.math import *
 
 array1_float64 = nb.types.Array(nb.float64, 1, 'C')
 array2_float64 = nb.types.Array(nb.float64, 2, 'C')
-
-@nb.njit(nb.float64(array1_float64, array1_float64))
-def sqdist(a, b):
-    return (b[0]-a[0])**2 + (b[1]-a[1])**2
 
 @nb.njit(nb.float64(array1_float64, array1_float64, nb.float64))
 def get_x(a, b, y):
@@ -38,7 +35,7 @@ def intersect(points, y):
         if x != -1: intersections.append(x)
     return intersections
 
-@nb.njit(nb.int32(array2_float64, array1_float64, nb.float64, nb.float64))
+@nb.njit(int_t(array2d_t, array1d_t, nb.float64, nb.float64))
 def closest(lines, prev, float_max, max_dist):
     lines_len = len(lines)
     closest_dist = float_max
