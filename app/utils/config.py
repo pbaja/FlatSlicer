@@ -12,6 +12,7 @@ default_data = {
         'epsilon': 0.5
     },
     'octoprint': {
+        'enabled': False,
         'url': '',
         'key': ''
     },

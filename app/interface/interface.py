@@ -3,7 +3,7 @@ from pathlib import Path
 from tkinter import messagebox
 
 from slicer import Slicer, Gcode, RasterImage
-from utils import Event, Config, Octoprint
+from utils import Event, Config, Octoprint, OctoprintResult
 from .window import Window
 
 
@@ -32,6 +32,7 @@ class Interface:
         self.window.trace_file += self._trace_file
         self.window.generate_file += self._genereate_file
         self.window.export_file += self._export_file
+        self.window.test_octoprint += self._test_octoprint
 
     def load_config(self) -> None:
         '''
@@ -107,5 +108,12 @@ class Interface:
 
         # Upload to octoprint
         if len(self.config.get_value('octoprint.url')) > 0:
-            octo = Octoprint(self.config)
-            octo.upload(gcode_path.name, output)
+            Octoprint.upload(self.config, gcode_path.name, output)
+
+    def _test_octoprint(self):
+        self.window.dump_config(self.config)
+        result, version = Octoprint.server_version(self.config)
+        if result == OctoprintResult.Success:
+            messagebox.showinfo('Success', f'Connected successfully.\nOctoPrint version: {version}')
+        else:
+            messagebox.showwarning('Failed', f'Failed to connect to OctoPrint.\nReason: {result.name}\n\n{version}')

@@ -147,7 +147,7 @@ class SidebarButtons(Widget):
 
     def add_button(self, button_text:str, callback=None):
         self.col += 1
-        make_button(self.frame, 1, self.col, button_text, callback)
+        make_button(self.frame, 1, self.col, button_text, callback=callback)
 
 class SidebarListbox(Widget):
     def __init__(self, parent, title_text:str, config_name:str):
@@ -162,4 +162,4 @@ class SidebarListbox(Widget):
 
     def add_button(self, button_text:str, callback=None):
         self.btn_col += 1
-        make_button(self.button_frame, 1, self.btn_col, button_text, callback)
+        make_button(self.button_frame, 1, self.btn_col, button_text, callback=callback)

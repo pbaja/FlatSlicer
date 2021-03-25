@@ -3,14 +3,17 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from utils import Event
 from .widgets import *
 
 class SettingsWindow:
 
     def __init__(self, root):
         self.root = root
-        self.window:tk.Toplevel = None
         self.items = {}
+
+        # Events
+        self.octoprint_test_pressed = Event() 
 
         # Spawn window
         self.window = tk.Toplevel(self.root)
@@ -80,6 +83,4 @@ class SettingsWindow:
         title_row(frame, r, 'Connection') ; r += 1
         self.items['octoprint.url'] = entry_row(frame, r, 'Hostname, IP or URL') ; r += 1
         self.items['octoprint.key'] = entry_row(frame, r, 'API Key') ; r += 1
-
-        # Current status and testing
-        title_row(frame, r, 'Status') ; r += 1
+        make_button(frame, r, 0, 'Test Connection', col_span=2, width=20, sticky=None, callback=self.octoprint_test_pressed) ; r += 1

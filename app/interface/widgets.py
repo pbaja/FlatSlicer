@@ -40,13 +40,13 @@ def make_entry(parent, row, col, validate=None, col_weight=1, width=25):
     if validate is not None: entry.config(validatecommand=(parent.register(validate), '%P'))
     return entry
 
-def make_button(parent, row, col, label, callback=None):
+def make_button(parent, row, col, label, col_span=1, width=5, sticky=tk.NSEW, callback=None):
     # Create button
     none_func = lambda: None
-    btn = ttk.Button(parent, text=label, width=5, command=none_func if callback is None else callback)
+    btn = ttk.Button(parent, text=label, width=width, command=none_func if callback is None else callback)
     # Configure layout
     parent.columnconfigure(col, weight=1)
-    btn.grid(row=row, column=col, pady=5, padx=2, columnspan=1, sticky=tk.NSEW)
+    btn.grid(row=row, column=col, pady=5, padx=2, columnspan=col_span, sticky=sticky)
     return btn
 
 def validate_int(value:str) -> bool:

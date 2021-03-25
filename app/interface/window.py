@@ -50,14 +50,15 @@ class Window:
         # Private
         self._root:tk.Tk = None
         self._last_selection = 0
-        # Public
         self._sidebar:SidebarView = None
         self._workspace:WorkspaceView = None
+        self._settings = None
         # Events
         self.close_pressed = Event()
         self.trace_file = Event()
         self.generate_file = Event()
         self.export_file = Event()
+        self.test_octoprint = Event()
 
     def init(self):
         '''
@@ -83,7 +84,8 @@ class Window:
         window.pack(fill=tk.BOTH, expand=1)
 
         # Settings window
-        self.settings = SettingsWindow(self._root)
+        self._settings = SettingsWindow(self._root)
+        self._settings.octoprint_test_pressed += self.test_octoprint
 
         # Sidebar
         self._sidebar = SidebarView(window)
@@ -104,7 +106,7 @@ class Window:
         log.info('Window spawned')
 
     def _settings_pressed(self):
-        self.settings.open()
+        self._settings.open()
 
     def _addfile_pressed(self) -> None:
         filetypes = [('Image files', ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp'))]
@@ -166,14 +168,14 @@ class Window:
         Loads config values to sidebar
         '''
         self._sidebar.load_config(cfg)
-        self.settings.load_config(cfg)
+        self._settings.load_config(cfg)
 
     def dump_config(self, cfg):
         '''
         Dumps values from sidebar items to config
         '''
         self._sidebar.dump_config(cfg)
-        self.settings.dump_config(cfg)
+        self._settings.dump_config(cfg)
 
     def run(self):
         '''
