@@ -6,6 +6,7 @@ from typing import List
 from pathlib import Path
 from enum import IntEnum
 from PIL import Image, ImageOps
+from PIL.ExifTags import TAGS as ExifTags
 
 from utils import Config, PerfTool, rdp_simplify_all
 from utils.math import *
@@ -140,10 +141,25 @@ class RasterImage:
         self.image:Image = None
         self.polygons:List = None
 
+        self.exif_dpi:float = None
         self.info_dpi:float = None
         self.info_numlines:int = None
         self.info_numpolygons:int = None
         
+    def _exif_dpi(self, img):
+        exif = { ExifTags[k]: v for k, v in img.getexif().items() if k in ExifTags }
+        # Get Unit
+        unit = exif.get('ResolutionUnit', None) # 3->cm, 2->inch
+        if unit is None: return None
+        if unit == 1: return None # Prob pixels, not useful
+        # Get resolution
+        res = exif.get('XResolution', None)
+        if res is None: res = exif.get('YResolution', None) 
+        if res is None: return None
+        # Convert mm to inch
+        if unit == 3: res /= 0.3937008
+        return round(res, 3)
+
     def load(self) -> bool:
         '''
         Opens image, converts it to grayscale and then to binary array 
@@ -151,6 +167,8 @@ class RasterImage:
         try:
             # Open image
             img = Image.open(self.image_path)
+            self.exif_dpi = self._exif_dpi(img)
+
             # Find bg color
             rgb = img.convert('RGBA')
             pix = rgb.getpixel((0,0))
