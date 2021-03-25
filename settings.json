@@ -1,0 +1,14 @@
+{
+    "octoprint": {
+        "url": "",
+        "key": ""
+    },
+    "machine": {
+        "laser_on": "M106 P1 S{power}",
+        "laser_off": "M107 P1",
+        "min_power": 1.0,
+        "burn_accel": 5000.0,
+        "travel_accel": 2000.0,
+        "travel_speed": 100.0
+    }
+}

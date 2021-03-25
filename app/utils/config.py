@@ -1,16 +1,11 @@
 import json, sys
 import logging as log
-from typing import Dict
+from typing import Dict, List
 from pathlib import Path
 
 default_data = {
-    'files': [
-        # No files loaded by default
-    ],
-    'import': {
-        'dpi': 508,
-        'epsilon': 0.5
-    },
+
+    # Settings
     'octoprint': {
         'enabled': False,
         'url': '',
@@ -25,6 +20,12 @@ default_data = {
         'min_travel': 0.5,
         'travel_accel': 2000.0,
         'burn_accel': 5000.0,
+    },
+
+    # Config
+    'files': [],
+    'import': {
+        'dpi': 508
     },
     'outline': {
         'passes': 1,
@@ -41,10 +42,10 @@ default_data = {
 
 class Config:
 
-    def __init__(self, filepath='config.json'):
-        self.path:Path = Path(sys.path[0]).parent / filepath
-        self.data:Dict = {}
+    def __init__(self):
+        self.base_path:Path = Path(sys.path[0]).parent
         self.default_data = self._flatten(default_data)
+        self.data:Dict = {}
 
     def _flatten(self, target, path=''):
         '''
@@ -103,13 +104,25 @@ class Config:
         except ValueError:
             log.error(f'Failed to set value. Could not convert "{key_path}" value: "{value}"" to {key_type}')
 
+    def _write(self, target:Dict, file_path:Path, keys:List):
+        with file_path.open('w+') as f:
+            result = {k: target[k] for k in target.keys() and set(keys)}
+            json.dump(result, f, indent=4)
+
+    def _read(self, target:Dict, file_path:Path):
+        if not file_path.is_file(): 
+            return None
+        with file_path.open('r') as f:
+            target.update(self._flatten(json.load(f)))
+
     def save(self):
-        with self.path.open('w+') as f:
-            json.dump(self._inflate(self.data), f, indent=4)
-            log.info('Saved config to file')
+        inflated = self._inflate(self.data)
+        self._write(inflated, self.base_path / 'settings.json', ['machine', 'octoprint'])
+        self._write(inflated, self.base_path / 'config.json', ['files', 'import', 'outline', 'infill'])
+        log.info('Saved config to files')
 
     def load(self):
-        if self.path.is_file():
-            with self.path.open('r') as f:
-                self.data = self._flatten(json.load(f))
-                log.info('Loaded config from file')
+        self.data = {}
+        self._read(self.data, self.base_path / 'settings.json')
+        self._read(self.data, self.base_path / 'config.json')
+        log.info('Loaded config from files')
