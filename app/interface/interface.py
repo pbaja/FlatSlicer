@@ -107,7 +107,7 @@ class Interface:
             log.info(f'Saved Gcode to {path}')
 
         # Upload to octoprint
-        if len(self.config.get_value('octoprint.url')) > 0:
+        if self.config.get_value('octoprint.enabled'):
             Octoprint.upload(self.config, gcode_path.name, output)
 
     def _test_octoprint(self):
@@ -115,5 +115,7 @@ class Interface:
         result, version = Octoprint.server_version(self.config)
         if result == OctoprintResult.Success:
             messagebox.showinfo('Success', f'Connected successfully.\nOctoPrint version: {version}')
+            self.config.set_value('octoprint.enabled', True)
         else:
             messagebox.showwarning('Failed', f'Failed to connect to OctoPrint.\nReason: {result.name}\n\n{version}')
+            self.config.set_value('octoprint.enabled', False)

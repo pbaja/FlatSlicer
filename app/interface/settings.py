@@ -64,13 +64,13 @@ class SettingsWindow:
         title_row(frame, r, 'Laser') ; r += 1
         self.items['machine.laser_on'] = entry_row(frame, r, 'Laser ON', desc='Used to turn on and set the laser power') ; r += 1
         self.items['machine.laser_off'] = entry_row(frame, r, 'Laser OFF', desc='Used to turn off the laser at the end') ; r += 1
-        self.items['machine.min_power'] = entry_row(frame, r, 'Min Power [%]', desc='Minimum laser power used when travelling', validate=validate_float) ; r += 1
+        self.items['machine.min_power:float'] = entry_row(frame, r, 'Min Power [%]', desc='Minimum laser power used when travelling', validate=validate_float) ; r += 1
         
         # Global settings
         title_row(frame, r, 'Global') ; r += 1
-        self.items['machine.burn_accel'] = entry_row(frame, r, 'Burn acceleration [mm/s²]', desc='Setting this too low will result in accidential gradients') ; r += 1
-        self.items['machine.travel_accel'] = entry_row(frame, r, 'Travel acceleration [mm/s²]', desc='Acceleration for travelling') ; r += 1
-        self.items['machine.travel_speed'] = entry_row(frame, r, 'Travel speed [mm/s]', desc='Speed used when not burning, can be set as high as your machine can handle.') ; r += 1
+        self.items['machine.burn_accel:float'] = entry_row(frame, r, 'Burn acceleration [mm/s²]', desc='Setting this too low will result in accidential gradients') ; r += 1
+        self.items['machine.travel_accel:float'] = entry_row(frame, r, 'Travel acceleration [mm/s²]', desc='Acceleration for travelling') ; r += 1
+        self.items['machine.travel_speed:float'] = entry_row(frame, r, 'Travel speed [mm/s]', desc='Speed used when not burning, can be set as high as your machine can handle.') ; r += 1
 
 
     def _add_octoprint_tab(self):

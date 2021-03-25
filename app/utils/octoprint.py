@@ -22,10 +22,10 @@ class Octoprint:
         key = config.get_value('octoprint.key')
 
         # Prepare data
-        url = urljoin(self.url, '/api/files/local')
+        url = urljoin(url, '/api/files/local')
         files = {'file': (filename, text)}
         data = {'select': 'true','print': 'false' }
-        headers = { 'X-Api-Key': self.key }
+        headers = { 'X-Api-Key': key }
 
         # Upload
         response = requests.post(url, files=files, data=data, headers=headers)
