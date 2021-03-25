@@ -5,6 +5,7 @@ from typing import List
 from utils import Event
 from .style import *
 from .view import View
+from .widgets import *
 
 class SidebarView(View):
     def __init__(self, parent):
@@ -32,14 +33,6 @@ class SidebarView(View):
         widget.add_entry('Image DPI', 'import.dpi:float')
         self.items.update(widget.items)
 
-        widget = SidebarWidget(self.frame, 'Machine')
-        widget.add_entry('Laser ON', 'machine.laser_on')
-        widget.add_entry('Laser OFF', 'machine.laser_off')
-        widget.add_entry('Min Power [%]', 'machine.min_power:float', validate=self.validate_float)
-        widget.add_entries('Offset [mm]', ['X', 'Y', 'Z'], ['machine.offset.x:float', 'machine.offset.y:float', 'machine.offset.z:float'])
-        widget.add_entry('Travel Speed [mm/s]', 'machine.travel_speed:float', validate=self.validate_float)
-        self.items.update(widget.items)
-
         widget = SidebarWidget(self.frame, 'Outline')
         widget.add_entry('Passes', 'outline.passes:int', validate=self.validate_int)
         widget.add_entry('Power [%]', 'outline.power:float', validate=self.validate_float)
@@ -57,6 +50,23 @@ class SidebarView(View):
         buttons.add_button('Trace image', callback=self.trace_pressed)
         buttons.add_button('Generate Gcode', callback=self.generate_pressed)
         buttons.add_button('Export Gcode', callback=self.export_pressed)
+
+    def load_config(self, cfg):
+        for path, item in self.items.items():
+            value = cfg.get_value(path)
+            if isinstance(item, tk.Entry):
+                item.delete(0, tk.END)
+                item.insert(0, str(value))
+            elif isinstance(item, tk.Listbox):
+                for x in value:
+                    item.insert(tk.END, x)
+
+    def dump_config(self, cfg):
+        for path, item in self.items.items():
+            if isinstance(item, tk.Entry):
+                cfg.set_value(path, item.get())
+            elif isinstance(item, tk.Listbox):
+                cfg.set_value(path, list(item.get(0, item.size())))
 
     def validate_int(self, value:str) -> bool:
         try:
@@ -98,15 +108,8 @@ class SidebarWidget(Widget):
 
     def add_entry(self, label_text:str, config_name:str, validate=None):
         self.row += 1
-        self.add_label(label_text, self.row)
-        entry = tk.Entry(self.frame, validate='all')
-        entry.configure(relief='flat', background=COLOR_BG1)
-        entry.columnconfigure(0, weight=1)
-        entry.grid(row=self.row, column=1, padx=5, pady=2, sticky=tk.E)
-        entry.insert(0, '-')
-        if validate is not None:
-            entry.config(validatecommand=(self.frame.register(validate), '%P'))
-        self.items[config_name] = entry
+        self.items[config_name] = make_entry(self.frame, self.row, 1, validate=validate)
+        make_label(self.frame, self.row, 0, label_text)
 
     def add_entries(self, label_text:str, entry_label_texts:List[str], config_names:List[str], default_texts:List[str]=None, validate=None):
         self.row += 1
@@ -117,26 +120,8 @@ class SidebarWidget(Widget):
         frame.grid(row=self.row, column=1, padx=5, sticky=tk.E)
         # Add buttons to this frame
         for col in range(len(entry_label_texts)):
-            # Add label
-            label = ttk.Label(frame, text=entry_label_texts[col], anchor=tk.W)
-            label.columnconfigure(col*2, weight=0)
-            label.grid(row=0, column=col*2, padx=5, sticky=tk.NSEW)
-            # Add entry
-            entry = tk.Entry(frame, width=4, validate='all')
-            entry.configure(relief='flat', background=COLOR_BG1)
-            entry.columnconfigure(col*2+1, weight=1)
-            entry.grid(row=0, column=col*2+1, pady=5, columnspan=1, sticky=tk.NSEW)
-            entry.insert(0, '-')
-            if validate is not None:
-                entry.config(validatecommand=(self.frame.register(validate), '%P'))
-            self.items[config_names[col]] = entry
-
-    # def add_button(self, button_text, callback=None):
-    #     self.row += 1
-    #     none_func = lambda: None
-    #     btn = ttk.Button(self.frame, text=button_text, command=none_func if callback is None else callback)
-    #     btn.columnconfigure(0, weight=1)
-    #     btn.grid(row=self.row, column=0, pady=5, columnspan=2, sticky=tk.NSEW)
+            make_label(frame, 0, col*2, entry_label_texts[col], col_weight=0)
+            self.items[config_names[col]] = make_entry(frame, 0, col*2+1, validate=validate, width=4)
 
 class SidebarHeader(Widget):
     def __init__(self, parent, columnspan:int=2):
@@ -162,10 +147,7 @@ class SidebarButtons(Widget):
 
     def add_button(self, button_text:str, callback=None):
         self.col += 1
-        self.frame.columnconfigure(self.col, weight=1)
-        none_func = lambda: None
-        btn = ttk.Button(self.frame, text=button_text, width=5, command=none_func if callback is None else callback)
-        btn.grid(row=1, column=self.col, pady=5, padx=2, columnspan=1, sticky=tk.NSEW)
+        make_button(self.frame, 1, self.col, button_text, callback)
 
 class SidebarListbox(Widget):
     def __init__(self, parent, title_text:str, config_name:str):
@@ -180,7 +162,4 @@ class SidebarListbox(Widget):
 
     def add_button(self, button_text:str, callback=None):
         self.btn_col += 1
-        self.button_frame.columnconfigure(self.btn_col, weight=1)
-        none_func = lambda: None
-        btn = ttk.Button(self.button_frame, text=button_text, command=none_func if callback is None else callback)
-        btn.grid(row=0, column=self.btn_col, pady=5, padx=2, sticky=tk.NSEW)
+        make_button(self.button_frame, 1, self.btn_col, button_text, callback)

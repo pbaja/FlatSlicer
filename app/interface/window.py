@@ -165,26 +165,15 @@ class Window:
         '''
         Loads config values to sidebar
         '''
-        for path, item in self._sidebar.items.items():
-            value = cfg.get_value(path)
-            # Fill items
-            if isinstance(item, tk.Entry):
-                item.delete(0, tk.END)
-                item.insert(0, str(value))
-            elif isinstance(item, tk.Listbox):
-                for x in value:
-                    item.insert(tk.END, x)
+        self._sidebar.load_config(cfg)
+        self.settings.load_config(cfg)
 
     def dump_config(self, cfg):
         '''
         Dumps values from sidebar items to config
         '''
-        for path, item in self._sidebar.items.items():
-            if isinstance(item, tk.Entry):
-                cfg.set_value(path, item.get())
-            elif isinstance(item, tk.Listbox):
-                cfg.set_value(path, list(item.get(0, item.size())))
-                
+        self._sidebar.dump_config(cfg)
+        self.settings.dump_config(cfg)
 
     def run(self):
         '''
