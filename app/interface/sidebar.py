@@ -16,8 +16,13 @@ class SidebarView(View):
         self.trace_pressed = Event()
         self.generate_pressed = Event()
         self.export_pressed = Event()
+        self.settings_pressed = Event()
 
     def init(self):
+        header = SidebarHeader(self.frame)
+        header.add_title('FlatSlicer')
+        header.add_button('Settings', callback=self.settings_pressed)
+
         box = SidebarListbox(self.frame, 'Files', 'files')
         box.add_button('Add file', callback=self.addfile_pressed)
         box.add_button('Remove', callback=self.delfile_pressed)
@@ -69,10 +74,10 @@ class SidebarView(View):
 
 
 class Widget:
-    def __init__(self, parent, title_text, columnspan=2):
+    def __init__(self, parent, title_text, columnspan=2, style='TFrame'):
         self.items = {}
         # Add frame
-        self.frame = ttk.Frame(parent)
+        self.frame = ttk.Frame(parent, style=style)
         self.frame.columnconfigure(0, weight=1)
         self.frame.pack(fill=tk.BOTH)
         # Add title
@@ -132,6 +137,23 @@ class SidebarWidget(Widget):
     #     btn = ttk.Button(self.frame, text=button_text, command=none_func if callback is None else callback)
     #     btn.columnconfigure(0, weight=1)
     #     btn.grid(row=self.row, column=0, pady=5, columnspan=2, sticky=tk.NSEW)
+
+class SidebarHeader(Widget):
+    def __init__(self, parent, columnspan:int=2):
+        super().__init__(parent, None, columnspan, style='header.TFrame')
+        self.col = -1
+
+    def add_title(self, label_text:str):
+        self.col += 1
+        self.frame.columnconfigure(self.col, weight=1)
+        label = ttk.Label(self.frame, text=label_text, anchor=tk.W, style='header.TLabel')
+        label.grid(row=0, column=self.col, padx=5, sticky=tk.NSEW)
+
+    def add_button(self, button_text:str, callback=None):
+        self.col += 1
+        none_func = lambda: None
+        btn = ttk.Button(self.frame, text=button_text, width=len(button_text), command=none_func if callback is None else callback)
+        btn.grid(row=0, column=self.col, pady=5, padx=2, columnspan=1, sticky=tk.NSEW)
 
 class SidebarButtons(Widget):
     def __init__(self, parent, title_text:str=None, columnspan:int=2):

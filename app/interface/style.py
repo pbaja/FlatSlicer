@@ -20,6 +20,7 @@ else:
 FONT_LABELS = (FONT_NAME, 9)
 FONT_BUTTONS = (FONT_NAME_BOLD, 9)
 FONT_TITLES = (FONT_NAME, 11)
+FONT_HEADERS = (FONT_NAME_BOLD, 12)
 FONT_CANVAS = (FONT_NAME_BOLD, 11)
 FONT_CANVAS_UI = (FONT_NAME, 8)
 
@@ -55,6 +56,7 @@ class AppStyle(ttk.Style):
 
         # Frame
         self.configure('TFrame', background='#22252A', borderwidth=0)
+        self.configure('header.TFrame', background='#23272D', borderwidth=0)
 
         # Buttons
         self.configure('TButton', background='#2D3035', foreground='#bfc1c4', width=20, borderwidth=0, focusthickness=3, focuscolor='none', font=FONT_BUTTONS)
@@ -63,6 +65,7 @@ class AppStyle(ttk.Style):
         # Labels
         self.configure('TLabel', background='#22252A', foreground='#bfc1c4', font=FONT_LABELS)
         self.configure('title.TLabel', background='#22252A', anchor=tk.CENTER, foreground='#bfc1c4', font=FONT_TITLES)
+        self.configure('header.TLabel', background='#23272D', anchor=tk.CENTER, foreground='#65AED9', font=FONT_HEADERS)
 
         # Entries
         self.configure('TEntry', foreground='#bfc1c4', fieldbackground='#22252A', relief='flat')

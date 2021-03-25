@@ -10,6 +10,7 @@ from slicer import RasterImage, Gcode
 from .style import *
 from .sidebar import SidebarView
 from .workspace import WorkspaceView
+from .settings import SettingsWindow
 
 def _load_fonts() -> None:
     # Unfortuanely currently we support loading custom fonts only on windows
@@ -81,6 +82,9 @@ class Window:
         window = tk.PanedWindow(self._root)
         window.pack(fill=tk.BOTH, expand=1)
 
+        # Settings window
+        self.settings = SettingsWindow(self._root)
+
         # Sidebar
         self._sidebar = SidebarView(window)
         self._sidebar.addfile_pressed += self._addfile_pressed
@@ -88,6 +92,7 @@ class Window:
         self._sidebar.trace_pressed += self._trace_pressed
         self._sidebar.generate_pressed += self._generate_pressed
         self._sidebar.export_pressed += self._export_pressed
+        self._sidebar.settings_pressed += self._settings_pressed
         self._sidebar.init()
         window.add(self._sidebar.frame)
 
@@ -97,6 +102,9 @@ class Window:
         window.add(self._workspace.frame)
 
         log.info('Window spawned')
+
+    def _settings_pressed(self):
+        self.settings.open()
 
     def _addfile_pressed(self) -> None:
         filetypes = [('Image files', ('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp'))]
