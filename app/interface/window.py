@@ -72,7 +72,7 @@ class Window:
         self._root.title(WINDOW_TITLE)
         self._root.minsize(*WINDOW_SIZE)
         self._root.protocol("WM_DELETE_WINDOW", self.close_pressed)
-        self._root.iconphoto("False", tk.PhotoImage(file=str(Path(sys.path[0]).parent / 'img' / 'icon.png')))
+        self._root.iconbitmap(str(Path(sys.path[0]).parent / 'img' / 'icon.ico'))
 
         # Apply style
         style = AppStyle(self._root)

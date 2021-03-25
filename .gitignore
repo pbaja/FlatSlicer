@@ -1,16 +1,4 @@
-# Ignore all top level stuff by default
-# This prevents adding files by accident
-/*
-
-# Excluding
-!/app/
-!/img/
-!/fonts/
-!/README.md
-!/.gitignore
-!/workspace.code-workspace
-!/requirements.txt
-!/run.*
-
-# Python stuff
 __pycache__/
+/.venv/
+/.vscode/
+/config.json

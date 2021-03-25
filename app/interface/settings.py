@@ -1,4 +1,6 @@
+import sys
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk
 
 from .widgets import *
@@ -15,6 +17,7 @@ class SettingsWindow:
         self.window.title("Settings")
         self.window.geometry("600x400")
         self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.window.iconbitmap(str(Path(sys.path[0]).parent / 'img' / 'wrench.ico'))
         self.close()
 
         # Add tabs

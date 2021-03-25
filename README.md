@@ -1,4 +1,4 @@
-<p align="center"><img align="center" src="img/icon.png" width="25%" alt="FlatSlicer's logo"></p>
+<p align="center"><img align="center" src="extras/icon.png" width="25%" alt="FlatSlicer's logo"></p>
 
 ## Description  
 FlatSlicer is a tool that generates Gcode from raster images (png, jpeg, etc.) for lasers. It will extract and trace polygons from image and then generate outline/infill in an optimized way.  
@@ -6,7 +6,7 @@ FlatSlicer is a tool that generates Gcode from raster images (png, jpeg, etc.) f
 Useful for making PCBs, engraving text, shapes, cool patterns.  
 Not suitable for engraving images (does not support grayscale - yet).  
   
-![Screenshot](img/glowtie.png)  
+![Screenshot](extras/glowtie.png)  
   
 ## Usage  
 Eventually I want to provide installer with binaries that will be available to download at the Releases page.  
@@ -33,5 +33,5 @@ Features to add before the project would be considered "stable beta".
  - [ ] Add border option (inset, outset) to outline
  - [ ] Add value checks to prevent accidential breaks
  - [ ] Add raster feature to support engraving raster (grayscale) images
- - [ ] Machine tab, with settings saved separately from project config
- - [ ] In app uploading Gcode to OctoPrint
+ - [x] Settings window
+ - [x] In app uploading Gcode to OctoPrint
