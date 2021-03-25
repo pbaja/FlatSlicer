@@ -6,6 +6,9 @@ class PerfTool:
         self._timer = time.perf_counter()
         self._history = {}
 
+    def __str__(self):
+        return ", ".join(f'{k}: {v} ms' for k, v in self._history.items())
+
     def tick(self, tag=''):
         '''
         Returns time (in miliseconds, rounded to 2 places) elapsed since previous tick call
