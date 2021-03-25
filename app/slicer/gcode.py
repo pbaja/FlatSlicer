@@ -8,10 +8,12 @@ from .raster import RasterImage
 from utils import PerfTool, Octoprint
 from utils.math import *
 
+array1_int = nb.types.Array(int_t, 1, 'C')
+array2_int = nb.types.Array(int_t, 2, 'C')
 array1_float64 = nb.types.Array(nb.float64, 1, 'C')
 array2_float64 = nb.types.Array(nb.float64, 2, 'C')
 
-@nb.njit(nb.float64(array1_float64, array1_float64, nb.float64))
+@nb.njit(nb.float64(array1_int, array1_int, nb.float64))
 def get_x(a, b, y):
     # Check if ba is not zero
     ba = b[1] - a[1]
@@ -25,7 +27,7 @@ def get_x(a, b, y):
 
 list_float64 = nb.types.List(dtype=nb.float64)
 
-@nb.njit(list_float64(array2_float64, nb.float64))
+@nb.njit(list_float64(array2_int, nb.float64))
 def intersect(points, y):
     intersections = [] # X coords
     for idx in nb.prange(len(points)-1):
@@ -35,7 +37,7 @@ def intersect(points, y):
         if x != -1: intersections.append(x)
     return intersections
 
-@nb.njit(int_t(array2d_t, array1d_t, nb.float64, nb.float64))
+@nb.njit(int_t(array2_float64, array1_float64, nb.float64, nb.float64))
 def closest(lines, prev, float_max, max_dist):
     lines_len = len(lines)
     closest_dist = float_max
