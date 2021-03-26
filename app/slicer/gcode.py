@@ -11,20 +11,24 @@ from utils.math import *
 @nb.njit(array1d_t(array2d_t, int_t))
 def intersect(points, y):
     results = []
-    for i in nb.prange(len(points)-1):
+    for i in range(len(points)-1):
         # Line points
         a = points[i]
         b = points[i+1]
         # Skip horizontal lines
         ba = b[1] - a[1]
         if ba == 0: continue
-
         # Calculate slope
         ya = y - a[1]
         t = ya / ba
         if t > 1.0 or t < 0.0: continue
+        # Calculate x
         x = (1.0 - t) * a[0] + t * b[0]
         results.append(int(x))
+
+        # print('---')
+        # print(str(i))
+        # print(str(int(x)))
     return np.array(results, dtype=np.int32)
 
 class Gcode:
@@ -54,23 +58,25 @@ class Gcode:
             return
         print(f'num: {polygons_len}')
         
-        # Calculate bbox
-        bbox = calc_bbox(self._img.polygons[0])
-        # for points in self._img.polygons[1:]:
-        #     new_bbox = calc_bbox(points)
-        #     if new_bbox[0] < bbox[0]: bbox[0] = new_bbox[0]
-        #     if new_bbox[1] > bbox[1]: bbox[1] = new_bbox[1]
-        #     if new_bbox[2] < bbox[2]: bbox[2] = new_bbox[2]
-        #     if new_bbox[3] > bbox[3]: bbox[3] = new_bbox[3]
-        print(bbox)
+        # Calculate bboxes
+        polygons = self._img.polygons
+        polygons_len = len(polygons)
+        bboxes = np.zeros((len(polygons), 4), dtype=np.int32)
+        for i in range(polygons_len):
+            bboxes[i] = calc_bbox(polygons[i])
 
-        # Iterate over all polygons
-        # line_spacing = max(int(config.get_value('infill.line_spacing') * self._img.info_mm2pix), 1)
-        # for points in self._img.polygons:
-        #     bbox = calc_bbox(points) # xmin, xmax, ymin, ymax
-        #     for y in range(bbox[2], bbox[3], line_spacing):
-        #         # Get all intersections
-        #         result = intersect(points, y)
+        # Generate lines
+        height = self._img.image.size[1]
+        line_spacing = max(int(config.get_value('infill.line_spacing') * self._img.info_mm2pix), 1)
+        for y in range(0, height, line_spacing):
+            # Iterate over polygons
+            for i in range(polygons_len):
+                # Skip outside bbox
+                bbox = bboxes[i] # 0:xmin, 1:xmax, 2:ymin, 3:ymax
+                if y < bbox[2] or y > bbox[3]: continue
+                # Get intersections
+                points = polygons[i]
+                results = intersect(points, y)
 
     def generate(self, config):
         # Prepare job

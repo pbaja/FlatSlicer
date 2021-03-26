@@ -81,9 +81,9 @@ def _travel(pixels, x, y) -> List:
         if curr_dir == 0:
             # No more pixels to travel
             if reverse:
-                # Close polygon if dist(end,start) < 4 pixels
+                # Adjust end point polygon if dist(end,start) > 4 pixels
                 if sqdist(np.array(result[-1], dtype=int_t), np.array(result[0], dtype=int_t)) < 4:
-                    result.append(result[0])
+                    result[-1] = result[0]
                 return np.array(result, dtype=int_t)
             # Get back to starting point and check if the line goes to the other direction
             else:

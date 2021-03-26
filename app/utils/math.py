@@ -24,9 +24,10 @@ def sqdist(a:np.ndarray, b:np.ndarray) -> float:
     '''
     return (b[0]-a[0])**2 + (b[1]-a[1])**2
 
-@nb.njit(array1d_t(array2d_t))
 def calc_bbox(points):
     '''
-    Returns array containing xmin, xmax, ymin, ymax
+    Returns bouding box array in form of xmin, xmax, ymin, ymax
     '''
-    return np.array([np.min(points[0]), np.max(points[0]), np.min(points[1]), np.max(points[1])])
+    min_xy = np.min(points, axis=0)
+    max_xy = np.max(points, axis=0)
+    return np.array([min_xy[0], max_xy[0], min_xy[1], max_xy[1]])
