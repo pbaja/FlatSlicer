@@ -19,4 +19,4 @@ fi
 
 # Run application
 echo "Starting FlatSlicer"
-python app
+python run.py

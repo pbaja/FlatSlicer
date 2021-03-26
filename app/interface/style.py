@@ -33,7 +33,7 @@ FONT_CANVAS = (FONT_NAME_BOLD, 11)
 FONT_CANVAS_UI = (FONT_NAME, 8)
 
 # Icons
-__icon_path = Path(sys.path[0]) / 'img'
+__icon_path = Path() / 'img'
 ICON_FLATSLICER = str(__icon_path / 'icon.ico')
 ICON_SETTINGS = str(__icon_path / 'settings.png')
 

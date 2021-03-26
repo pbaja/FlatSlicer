@@ -43,7 +43,7 @@ default_data = {
 class Config:
 
     def __init__(self):
-        self.base_path:Path = Path(sys.path[0])
+        self.base_path:Path = Path()
         self.default_data = self._flatten(default_data)
         self.data:Dict = {}
 
