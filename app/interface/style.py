@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Window
 
-from version import VERSION_STR
+from .. import VERSION_STR
 WINDOW_TITLE = f'Flat Slicer v{VERSION_STR}'
 WINDOW_SIZE = (1280, 720)
 
@@ -33,7 +33,7 @@ FONT_CANVAS = (FONT_NAME_BOLD, 11)
 FONT_CANVAS_UI = (FONT_NAME, 8)
 
 # Icons
-__icon_path = Path(sys.path[0]).parent / 'img'
+__icon_path = Path(sys.path[0]) / 'img'
 ICON_FLATSLICER = str(__icon_path / 'icon.ico')
 ICON_SETTINGS = str(__icon_path / 'settings.png')
 

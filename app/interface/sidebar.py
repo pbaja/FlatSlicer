@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List
 
-from utils import Event
+from ..utils import Event
 from .style import *
 from .view import View
 from .widgets import *

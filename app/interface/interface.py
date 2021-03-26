@@ -2,8 +2,8 @@ import logging as log
 from pathlib import Path
 from tkinter import messagebox
 
-from slicer import Slicer, Gcode, RasterImage
-from utils import Event, Config, Octoprint, OctoprintResult
+from ..slicer import Slicer, Gcode, RasterImage
+from ..utils import Event, Config, Octoprint, OctoprintResult
 from .window import Window
 
 

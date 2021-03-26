@@ -43,7 +43,7 @@ default_data = {
 class Config:
 
     def __init__(self):
-        self.base_path:Path = Path(sys.path[0]).parent
+        self.base_path:Path = Path(sys.path[0])
         self.default_data = self._flatten(default_data)
         self.data:Dict = {}
 
@@ -118,7 +118,7 @@ class Config:
     def save(self):
         inflated = self._inflate(self.data)
         self._write(inflated, self.base_path / 'settings.json', ['machine', 'octoprint'])
-        self._write(inflated, self.base_path / 'config.json', ['files', 'import', 'outline', 'infill'])
+        self._write(inflated, self.base_path / 'config.json', ['files', 'image', 'outline', 'infill'])
         log.info('Saved config to files')
 
     def load(self):

@@ -1,9 +1,9 @@
 import logging as log
 from pathlib import Path
-from utils import Event
 from typing import List, Dict
 from uuid import UUID
 
+from ..utils import Event
 from .raster import RasterImage
 
 class Slicer:

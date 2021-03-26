@@ -8,7 +8,7 @@ from enum import IntEnum
 from PIL import Image, ImageOps
 from PIL.ExifTags import TAGS as ExifTags
 
-from utils import Config, PerfTool, rdp_simplify_all
+from ..utils import Config, PerfTool, rdp_simplify_all
 
 class Pixel(IntEnum):
     Black = 0

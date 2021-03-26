@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .job import LaserJob, LaserUnit
 from .raster import RasterImage
-from utils import PerfTool, Octoprint
+from ..utils import PerfTool, Octoprint
 
 array1_float64 = nb.types.Array(nb.float64, 1, 'C')
 array2_float64 = nb.types.Array(nb.float64, 2, 'C')

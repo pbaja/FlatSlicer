@@ -5,8 +5,8 @@ from tkinter import ttk, filedialog, messagebox
 from ctypes import windll, create_string_buffer, byref
 from pathlib import Path
 
-from utils import Event
-from slicer import RasterImage, Gcode
+from ..utils import Event
+from ..slicer import RasterImage, Gcode
 from .style import *
 from .sidebar import SidebarView
 from .workspace import WorkspaceView

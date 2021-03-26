@@ -3,7 +3,7 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
-from utils import Event
+from ..utils import Event
 from .widgets import *
 from .style import ICON_SETTINGS
 
