@@ -188,6 +188,12 @@ class WorkspaceView(View):
         for line_id in self._line_ids: self.canvas.delete(line_id[0])
         self._line_ids.clear()
 
+    def draw_point(self, x, y):
+        offset = self.canvas.coords(self._anchor_id)
+        x = x  * self._scale + offset[0]
+        y = y  * self._scale + offset[1]
+        self.canvas.create_rectangle(x, y, x+1, y+1, fill='red')
+
     def show_img(self, image:RasterImage):
         '''
         Display image on canvas

@@ -90,6 +90,11 @@ class Interface:
         # Show
         self.window.show_gcode(gcode)
 
+        #debug
+        for y in range(len(gcode.results)):
+            for x in gcode.results[y]:
+                self.window._workspace.draw_point(x, y)
+
     def _export_file(self, path:Path, gcode_path:Path) -> None:
         # Get image
         img = self.slicer.get_image(file_path=path, load=True)

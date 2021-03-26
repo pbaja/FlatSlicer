@@ -3,7 +3,7 @@ import numba as nb
 
 # Types
 float_t = nb.float64
-int_t = nb.int32
+int_t = nb.int64
 byte_t = nb.uint8
 array_t = nb.types.Array
 list_t = nb.types.List

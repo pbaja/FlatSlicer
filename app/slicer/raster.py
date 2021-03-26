@@ -9,7 +9,6 @@ from PIL import Image, ImageOps
 from PIL.ExifTags import TAGS as ExifTags
 
 from utils import Config, PerfTool, rdp_simplify_all
-from utils.math import *
 
 class Pixel(IntEnum):
     Black = 0
@@ -17,7 +16,11 @@ class Pixel(IntEnum):
     Outline = 2
     Visited = 3
 
-@nb.njit(nb.int32(bytearray2d_t, int_t, int_t))
+_pixels_array = nb.types.Array(nb.uint8, 2, 'C')
+_tuple64_array = nb.types.List(nb.types.UniTuple(nb.int64, 2))
+_tuple64_array2 = nb.types.List(_tuple64_array)
+
+@nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
 def _neighbours_sum(a, x, y) -> int:
     n1 = a[x-1, y+1] == Pixel.Black
     n2 = a[x  , y+1] == Pixel.Black
@@ -29,7 +32,7 @@ def _neighbours_sum(a, x, y) -> int:
     n8 = a[x-1, y  ] == Pixel.Black
     return n1 + n2 + n3 + n4 + n5 + n6 + n7 + n8
 
-@nb.njit(bytearray2d_t(bytearray2d_t), parallel=True)
+@nb.njit(_pixels_array(_pixels_array), parallel=True)
 def _extract_outline(pixels) -> np.ndarray:
     w, h = pixels.shape
     for y in nb.prange(1, h-1):
@@ -41,7 +44,7 @@ def _extract_outline(pixels) -> np.ndarray:
                 pixels[x, y] = Pixel.Outline
     return pixels
 
-@nb.njit(nb.int32(bytearray2d_t, int_t, int_t))
+@nb.njit(nb.int32(_pixels_array, nb.int32, nb.int32))
 def _direction(pixels, x, y):
     if pixels[y, x-1] == Pixel.Outline: return 1
     elif pixels[y, x+1] == Pixel.Outline: return 2
@@ -53,7 +56,7 @@ def _direction(pixels, x, y):
     elif pixels[y+1, x+1] == Pixel.Outline: return 8
     return 0
 
-@nb.njit(array2d_t(bytearray2d_t, int_t, int_t), fastmath=True)
+@nb.njit(_tuple64_array(_pixels_array, nb.int32, nb.int32), fastmath=True)
 def _travel(pixels, x, y) -> List:
     pixels[y, x] = Pixel.Visited
     result = []
@@ -62,17 +65,17 @@ def _travel(pixels, x, y) -> List:
     prev_dir = 0
     prev2_dir = 0
 
-    deltas = np.array([
-        [99, 99], # INVALID
-        [-1,  0], # Left
-        [ 1,  0], # Right
-        [ 0, -1], # Up
-        [ 0,  1], # Down
-        [-1, -1], # Left-Up
-        [ 1, -1], # Right-Up
-        [-1,  1], # Left-Down
-        [ 1,  1], # Right-Down
-    ], dtype=int_t)
+    deltas = [
+        (99, 99), # INVALID
+        (-1,  0), # Left
+        ( 1,  0), # Right
+        ( 0, -1), # Up
+        ( 0,  1), # Down
+        (-1, -1), # Left-Up
+        ( 1, -1), # Right-Up
+        (-1,  1), # Left-Down
+        ( 1,  1), # Right-Down
+    ]
 
     while True:
         # Get next pixel direction
@@ -81,10 +84,7 @@ def _travel(pixels, x, y) -> List:
         if curr_dir == 0:
             # No more pixels to travel
             if reverse:
-                # Adjust end point polygon if dist(end,start) > 4 pixels
-                if sqdist(np.array(result[-1], dtype=int_t), np.array(result[0], dtype=int_t)) < 4:
-                    result[-1] = result[0]
-                return np.array(result, dtype=int_t)
+                return result
             # Get back to starting point and check if the line goes to the other direction
             else:
                 result.append((x, y)) # Add final point
@@ -112,7 +112,9 @@ def _travel(pixels, x, y) -> List:
         # Mark as visited
         pixels[y, x] = Pixel.Visited
 
-@nb.njit(list_t(array2d_t)(bytearray2d_t)) # parallel=True causes artifacts
+list_array2_float64 = nb.types.List(nb.types.Array(nb.float64, 2, 'C'))
+
+@nb.njit(list_array2_float64(_pixels_array)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
@@ -122,8 +124,9 @@ def _trace_outline(pixels) -> List:
             p = pixels[y, x]
             if p == Pixel.Outline:
                 points = _travel(pixels, x, y)
+                points.append(points[0]) # CLOSE POLYGON
                 if len(points) > 2: # At least 3 vertices make polygons
-                    polygons.append(points)
+                    polygons.append(np.array(points, dtype=np.float64))
     return polygons
 
 class RasterImage:
@@ -168,7 +171,6 @@ class RasterImage:
             # Open image
             img = Image.open(self.image_path)
             self.exif_dpi = self._exif_dpi(img)
-
             # Find bg color
             rgb = img.convert('RGBA')
             pix = rgb.getpixel((0,0))
@@ -248,5 +250,3 @@ class RasterImage:
         Simply shows image to the user, useful for debugging
         '''
         self.image.resize((self.image.width*4, self.image.height*4), Image.NEAREST).show()
-
-    
