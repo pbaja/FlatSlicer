@@ -1,10 +1,11 @@
-import sys
+import sys, webbrowser
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
 from utils import Event
 from .widgets import *
+from .style import ICON_SETTINGS
 
 class SettingsWindow:
 
@@ -20,7 +21,8 @@ class SettingsWindow:
         self.window.title("Settings")
         self.window.geometry("600x400")
         self.window.protocol("WM_DELETE_WINDOW", self.close)
-        self.window.iconbitmap(str(Path(sys.path[0]).parent / 'img' / 'wrench.ico'))
+        self.window.iconphoto(False, tk.PhotoImage(file=ICON_SETTINGS))
+        self.window.iconbitmap()
         self.close()
 
         # Add tabs
@@ -28,6 +30,7 @@ class SettingsWindow:
         self.notebook.pack(expand=True, fill=tk.BOTH)
         self._add_machine_tab()
         self._add_octoprint_tab()
+        self._add_about_tab()
 
     def open(self):
         self.window.deiconify()
@@ -84,3 +87,14 @@ class SettingsWindow:
         self.items['octoprint.url'] = entry_row(frame, r, 'Hostname, IP or URL') ; r += 1
         self.items['octoprint.key'] = entry_row(frame, r, 'API Key') ; r += 1
         make_button(frame, r, 0, 'Test Connection', col_span=2, width=20, sticky=None, callback=self.octoprint_test_pressed) ; r += 1
+
+    def _add_about_tab(self):
+        # Create frame
+        frame = make_frame(self.notebook)
+        self.notebook.add(frame, text='About')
+        r = 0
+
+        # Information
+        make_button(frame, r, 0, 'Visit GitHub', col_span=2, width=20, sticky=None, callback=lambda: webbrowser.open('https://github.com/pbaja/FlatSlicer'))
+
+

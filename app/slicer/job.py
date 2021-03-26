@@ -52,10 +52,10 @@ class LaserJob:
         self.on_command = config.get_value('machine.laser_on')
         self.off_command = config.get_value('machine.laser_off')
         self.travel_speed = config.get_value('machine.travel_speed')
-        self.offset = [config.get_value('machine.offset.x'), config.get_value('machine.offset.y'), config.get_value('machine.offset.z')]
-
         self.travel_accel = config.get_value('machine.travel_accel')
         self.burn_accel = config.get_value('machine.burn_accel')
+
+        self.offset = [config.get_value('image.offset.x'), config.get_value('image.offset.y'), config.get_value('image.offset.z')]
 
         self.outline_power = config.get_value('outline.power')
         self.outline_speed = config.get_value('outline.speed')

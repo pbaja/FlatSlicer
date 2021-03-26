@@ -1,3 +1,7 @@
+import sys
+import tkinter as tk
+from tkinter import ttk
+from pathlib import Path
 
 # Window
 
@@ -22,10 +26,16 @@ else:
 FONT_SMALL = (FONT_NAME, 8)
 FONT_LABELS = (FONT_NAME, 10)
 FONT_BUTTONS = (FONT_NAME_BOLD, 9)
+FONT_BUTTONS_SMALL = (FONT_NAME_BOLD, 8)
 FONT_TITLES = (FONT_NAME_BOLD, 11)
 FONT_HEADERS = (FONT_NAME_BOLD, 12)
 FONT_CANVAS = (FONT_NAME_BOLD, 11)
 FONT_CANVAS_UI = (FONT_NAME, 8)
+
+# Icons
+__icon_path = Path(sys.path[0]).parent / 'img'
+ICON_FLATSLICER = str(__icon_path / 'icon.ico')
+ICON_SETTINGS = str(__icon_path / 'settings.png')
 
 # Canvas
 
@@ -49,8 +59,6 @@ COLOR_BG2 = '#34373D'
 
 # TTK style
 
-import tkinter as tk
-from tkinter import ttk
 class AppStyle(ttk.Style):
 
     def __init__(self, root):
@@ -67,6 +75,7 @@ class AppStyle(ttk.Style):
         # Buttons
         self.configure('TButton', background=COLOR_BG1, foreground=COLOR_FG1, width=20, borderwidth=0, focusthickness=3, focuscolor='none', font=FONT_BUTTONS)
         self.map('TButton', background=[('active', COLOR_BG2)])
+        self.configure('header.TButton', font=FONT_BUTTONS_SMALL)
 
         # Labels
         self.configure('TLabel', background=COLOR_BG0, foreground=COLOR_FG1, font=FONT_LABELS)

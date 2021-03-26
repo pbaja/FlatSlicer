@@ -30,7 +30,8 @@ class SidebarView(View):
         self.items.update(box.items)
 
         widget = SidebarWidget(self.frame, 'Import')
-        widget.add_entry('Image DPI', 'import.dpi:float')
+        widget.add_entry('Image DPI', 'image.dpi:float')
+        widget.add_entries('Offset [mm]', ['X', 'Y', 'Z'], ['image.offset.x:float', 'image.offset.y:float', 'image.offset.z:float'])
         self.items.update(widget.items)
 
         widget = SidebarWidget(self.frame, 'Outline')
@@ -92,9 +93,9 @@ class Widget:
         self.frame.pack(fill=tk.BOTH)
         # Add title
         if title_text is not None:
-            title_label = ttk.Label(self.frame, text=title_text, style='title.TLabel')
+            title_label = ttk.Label(self.frame, text=title_text, anchor=tk.W,style='title.TLabel')
             title_label.columnconfigure(0, weight=1)
-            title_label.grid(row=0, column=0, pady=5, columnspan=columnspan, sticky=tk.NSEW)
+            title_label.grid(row=0, column=0, pady=5, padx=5, columnspan=columnspan, sticky=tk.NSEW)
 
 class SidebarWidget(Widget):
     def __init__(self, parent, title_text:str):
@@ -104,16 +105,16 @@ class SidebarWidget(Widget):
     def add_label(self, label_text:str, row=-1):
         # Label
         label = ttk.Label(self.frame, text=label_text, anchor=tk.W)
-        label.grid(row=self.row if row == -1 else row, column=0, padx=5, sticky=tk.NSEW)
+        label.grid(row=self.row if row == -1 else row, column=0, padx=(15, 5), sticky=tk.NSEW)
 
     def add_entry(self, label_text:str, config_name:str, validate=None):
         self.row += 1
         self.items[config_name] = make_entry(self.frame, self.row, 1, validate=validate)
-        make_label(self.frame, self.row, 0, label_text)
+        make_label(self.frame, self.row, 0, label_text, pad_x=(15,5))
 
     def add_entries(self, label_text:str, entry_label_texts:List[str], config_names:List[str], default_texts:List[str]=None, validate=None):
         self.row += 1
-        self.add_label(label_text, self.row)
+        make_label(self.frame, self.row, 0, label_text, pad_x=(15,5))
         # Add container frame
         frame = ttk.Frame(self.frame)
         frame.columnconfigure(0, weight=1)
@@ -137,7 +138,7 @@ class SidebarHeader(Widget):
     def add_button(self, button_text:str, callback=None):
         self.col += 1
         none_func = lambda: None
-        btn = ttk.Button(self.frame, text=button_text, width=len(button_text), command=none_func if callback is None else callback)
+        btn = ttk.Button(self.frame, text=button_text, width=len(button_text), command=none_func if callback is None else callback, style='header.TButton')
         btn.grid(row=0, column=self.col, pady=5, padx=2, columnspan=1, sticky=tk.NSEW)
 
 class SidebarButtons(Widget):

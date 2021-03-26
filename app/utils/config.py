@@ -15,7 +15,6 @@ default_data = {
         'laser_on': 'M106 P1 S{power}',
         'laser_off': 'M107 P1',
         'min_power': 1.0,
-        'offset': {'x': 0, 'y': 0, 'z': 20.0},
         'travel_speed': 100.0,
         'min_travel': 0.5,
         'travel_accel': 2000.0,
@@ -24,8 +23,9 @@ default_data = {
 
     # Config
     'files': [],
-    'import': {
-        'dpi': 508
+    'image': {
+        'dpi': 508,
+        'offset': {'x': 0, 'y': 0, 'z': 20.0}
     },
     'outline': {
         'passes': 1,

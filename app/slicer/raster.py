@@ -202,7 +202,7 @@ class RasterImage:
         Tries to convert binary array with image data to polygons
         '''
         # Update dpi
-        self.info_dpi = config.get_value('import.dpi')
+        self.info_dpi = config.get_value('image.dpi')
         self.info_mm2pix = self.info_dpi / 25.4
         self.info_height = self.info_height_px / self.info_mm2pix
 

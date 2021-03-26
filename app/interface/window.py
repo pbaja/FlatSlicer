@@ -12,6 +12,7 @@ from .sidebar import SidebarView
 from .workspace import WorkspaceView
 from .settings import SettingsWindow
 
+
 def _load_fonts() -> None:
     # Unfortuanely currently we support loading custom fonts only on windows
     if platform.system() != 'Windows':
@@ -73,7 +74,7 @@ class Window:
         self._root.title(WINDOW_TITLE)
         self._root.minsize(*WINDOW_SIZE)
         self._root.protocol("WM_DELETE_WINDOW", self.close_pressed)
-        self._root.iconbitmap(str(Path(sys.path[0]).parent / 'img' / 'icon.ico'))
+        self._root.iconbitmap(ICON_FLATSLICER)
 
         # Apply style
         style = AppStyle(self._root)

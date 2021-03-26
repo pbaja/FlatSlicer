@@ -66,10 +66,10 @@ class Interface:
         self.window.dump_config(self.config)
         # Check dpi
         if img.exif_dpi is not None:
-            if self.config.get_value('import.dpi') != img.exif_dpi:
+            if self.config.get_value('image.dpi') != img.exif_dpi:
                 msg = f'Loaded file contains information about DPI that is different from entered value.\n\nDo you want to update entered value to {img.exif_dpi}?' 
                 if messagebox.askyesno('Different DPI', msg):
-                    self.config.set_value('import.dpi', img.exif_dpi)
+                    self.config.set_value('image.dpi', img.exif_dpi)
                     self.window.load_config(self.config)
         # Trace
         img.trace(self.config)
