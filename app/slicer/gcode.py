@@ -3,18 +3,17 @@ import numpy as np
 import numba as nb
 from pathlib import Path
 
+from .math import *
 from .job import LaserJob, LaserUnit
 from .raster import RasterImage
 from ..utils import PerfTool, Octoprint
 
-array1_float64 = nb.types.Array(nb.float64, 1, 'C')
-array2_float64 = nb.types.Array(nb.float64, 2, 'C')
 
-@nb.njit(nb.float64(array1_float64, array1_float64))
+@nb.njit(float_t(floatarray_t, floatarray_t))
 def sqdist(a, b):
     return (b[0]-a[0])**2 + (b[1]-a[1])**2
 
-@nb.njit(nb.float64(array1_float64, array1_float64, nb.float64))
+@nb.njit(float_t(floatarray_t, floatarray_t, float_t))
 def get_x(a, b, y):
     # Check if ba is not zero
     ba = b[1] - a[1]
@@ -26,9 +25,7 @@ def get_x(a, b, y):
     if t > 1.0 or t < 0.0: return -1.0
     return (1.0 - t) * a[0] + t * b[0]
 
-list_float64 = nb.types.List(dtype=nb.float64)
-
-@nb.njit(list_float64(array2_float64, nb.float64))
+@nb.njit(floatlist_t(floatarray2d_t, float_t))
 def intersect(points, y):
     intersections = [] # X coords
     for idx in nb.prange(len(points)-1):
@@ -38,7 +35,7 @@ def intersect(points, y):
         if x != -1: intersections.append(x)
     return intersections
 
-@nb.njit(nb.int32(array2_float64, array1_float64, nb.float64, nb.float64))
+@nb.njit(nb.int32(floatarray2d_t, floatarray_t, float_t, float_t))
 def closest(lines, prev, float_max, max_dist):
     lines_len = len(lines)
     closest_dist = float_max

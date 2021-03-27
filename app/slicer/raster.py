@@ -81,14 +81,35 @@ def _travel(pixels, x, y) -> List:
         if curr_dir == 0:
             # No more pixels to travel
             if reverse:
-                # Close polygon
-                a = result[0] 
-                b = result[-1]
-                sqd = (b[0]-a[0])**2 + (b[1]-a[1])**2
-                if sqd < 4: result[-1] = result[0]
-                else: result.append(result[0]) #TODO: This is bad 'fix', maybe the tracing got bugged at corner at some point?
-                # Finished
+                # Check if can be closed
+                start = result[0] 
+                if sqdist(start, result[-1]) > 4:
+                    # Backtrack for a few steps
+                    retry = False
+                    for i in range(5):
+                        temp = result[-i-1]
+                        # Maybe we are within start (2px)
+                        if sqdist(start, temp) < 4:
+                            result[-1] = result[0]
+                            return result
+                        # Maybe we can take another direction
+                        if _direction(pixels, temp[0], temp[1]) != 0:
+                            retry = True
+                            for _ in range(i): result.pop()
+                            x = temp[0]
+                            y = temp[1]
+                            break
+                    # Found another way
+                    if retry: continue
+                    # Failed to close polygon, do it crude way
+                    #print('warn: failed to close polygon')
+                    result.append(result[0])
+                    return result
+
+                # Polygon closed
+                result[-1] = result[0]
                 return result
+                
             # Get back to starting point and check if the line goes to the other direction
             else:
                 result.append((x, y)) # Add final point
@@ -116,7 +137,7 @@ def _travel(pixels, x, y) -> List:
         # Mark as visited
         pixels[y, x] = Pixel.Visited
 
-@nb.njit(list_t(array2d_t)(bytearray2d_t)) # parallel=True causes artifacts
+@nb.njit(list_t(floatarray2d_t)(bytearray2d_t)) # parallel=True causes artifacts
 def _trace_outline(pixels) -> List:
     h, w = pixels.shape
     polygons = []
