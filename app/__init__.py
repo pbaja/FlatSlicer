@@ -4,8 +4,8 @@ Top level application module containing two main submodules: interface, slicer a
 import logging as log
 import sys
 
-VERSION = (0, 1)
-VERSION_STR = f'{VERSION[0]}.{VERSION[1]}'
+from .version import VERSION_STR
+
 
 def run():
     # Python version check

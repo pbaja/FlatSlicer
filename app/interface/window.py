@@ -5,13 +5,12 @@ from tkinter import ttk, filedialog, messagebox
 from ctypes import windll, create_string_buffer, byref
 from pathlib import Path
 
-from ..utils import Event
+from ..utils import Event, assets
 from ..slicer import RasterImage, Gcode
 from .style import *
 from .sidebar import SidebarView
 from .workspace import WorkspaceView
 from .settings import SettingsWindow
-
 
 def _load_fonts() -> None:
     # Unfortuanely currently we support loading custom fonts only on windows
@@ -32,13 +31,10 @@ def _load_fonts() -> None:
 
     # Load all fonts from /fonts directory
     num = 0
-    fonts = Path(sys.path[0]).parent / 'fonts'
-    for font in fonts.glob('*.ttf'):
+    for font in assets.get_fonts():
         path = str(font)
-        if not load_font(path):
-            log.error(f'Failed to load font {font}')
-        else:
-            num += 1
+        if not load_font(path): log.error(f'Failed to load font {font}')
+        else: num += 1
     log.info(f'Loaded {num} fonts')
 
 

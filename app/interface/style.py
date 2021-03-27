@@ -1,7 +1,7 @@
 import sys
 import tkinter as tk
 from tkinter import ttk
-from pathlib import Path
+from ..utils import assets
 
 # Window
 
@@ -33,9 +33,8 @@ FONT_CANVAS = (FONT_NAME_BOLD, 11)
 FONT_CANVAS_UI = (FONT_NAME, 8)
 
 # Icons
-__icon_path = Path() / 'img'
-ICON_FLATSLICER = str(__icon_path / 'icon.ico')
-ICON_SETTINGS = str(__icon_path / 'settings.png')
+ICON_FLATSLICER = str(assets.get_img('icon.ico'))
+ICON_SETTINGS = str(assets.get_img('settings.png'))
 
 # Canvas
 
