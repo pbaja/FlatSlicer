@@ -8,9 +8,8 @@ from pathlib import Path
 from ..utils import Event, assets
 from ..slicer import RasterImage, Gcode
 from .style import *
-from .sidebar import SidebarView
-from .workspace import WorkspaceView
-from .settings import SettingsWindow
+from .settings import SettingsWindow 
+from .views import WorkspaceView, SidebarView
 
 def _load_fonts() -> None:
     # Unfortuanely currently we support loading custom fonts only on windows

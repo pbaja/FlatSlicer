@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List
 
-from ..utils import Event
-from .style import *
+from ...utils import Event
+from ..style import *
+from ..widgets import *
 from .view import View
-from .widgets import *
 
 class SidebarView(View):
     def __init__(self, parent):

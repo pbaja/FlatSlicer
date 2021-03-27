@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image, ImageTk
 
 
-from ..utils import PerfTool
-from ..slicer import RasterImage, Gcode, LaserMove
+from ...utils import PerfTool
+from ...slicer import RasterImage, Gcode, LaserMove
+from ..style import *
 from .view import View
-from .style import *
 
 class WorkspaceView(View):
 
