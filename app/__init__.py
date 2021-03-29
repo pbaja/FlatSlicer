@@ -6,8 +6,7 @@ import sys
 
 from .version import VERSION_STR
 
-
-def run():
+def run(on_ready=None):
     # Python version check
     major, minor, *_ = sys.version_info
     if major < 3 or minor < 6:
@@ -46,6 +45,8 @@ def run():
 
     # Initialize and start
     slicer.init()
+
+    if on_ready is not None: on_ready()
     interface.init(slicer, config)
     interface.load_config()
     interface.main()
