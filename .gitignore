@@ -7,6 +7,4 @@ __pycache__/
 /settings.json
 
 # Pyinstaller stuff
-/dist/
-/build/
-/run.spec
+/temp/
